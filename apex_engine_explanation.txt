@@ -1,0 +1,240 @@
+# APEX Engine Code Explanation
+
+This document provides a comprehensive, line-by-line explanation of the `apex_engine.cpp` code, detailing the mathematical approaches, why certain constants and inputs are used, and how each simple or complex operation functions.
+
+## Overall Mathematical Approaches Used:
+1. **Fixed-Point Arithmetic for Grayscale Conversion**: Used to convert RGB to grayscale without using slow floating-point operations. Floating-point math on CPUs is slower than integer math. We use standard NTSC/luminance weights (R: 0.299, G: 0.587, B: 0.114) scaled by 256 for fast bitwise shifting.
+2. **Perona-Malik Anisotropic Diffusion (PDE - Partial Differential Equations)**: Used for edge-preserving image smoothing. Unlike Gaussian blur which blurs everything equally, this PDE stops blurring across sharp boundaries (edges). Inputs are the image, iterations, lambda (integration time step), and K (edge threshold). It is used to smooth out noisy road textures while keeping lane markings sharp.
+3. **Power Iteration SVD (Singular Value Decomposition)**: A fast numerical method to find the dominant eigenvector/eigenvalue of a matrix. In this codebase's architecture, it represents extracting the principal background structure. The current main loop implements an Exponential Moving Average (EMA) approximation of this for faster real-time CPU streaming.
+4. **Conjugate Gradient (CG) and Alternating Direction Method of Multipliers (ADMM)**: Used to solve a constrained convex optimization problem. Here, it optimizes the vehicle's trajectory (velocity profile over time) to minimize "jerk" (sudden changes in acceleration) ensuring smooth driving. ADMM splits the complex problem into easier subproblems, and CG solves the linear matrix system rapidly.
+5. **Markov Decision Process (MDP) and Value Iteration**: Used for autonomous decision making. MDP formalizes decision-making where outcomes are partly random and partly under control. Value Iteration computes the optimal action (policy lookup table) for every possible state offline to maximize future rewards (e.g., avoiding crashes) during real-time driving.
+
+---
+
+## Line-by-Line Explanation
+
+**Lines 1-6:** Standard C++ library inclusions.
+* `#include <iostream>`: Allows for printing to standard output and standard error (like `cerr`).
+* `#include <vector>`: For dynamic arrays (though manual allocation via `new` is heavily used in this code for C-style performance).
+* `#include <cmath>`: Includes math functions like `sqrt` (square root) and `abs` (absolute value).
+* `#include <cstring>`: Includes memory manipulation functions like `memcpy` and `memset`.
+* `#include <algorithm>`: Includes functions like `std::max` and `std::min` to clamp values.
+* `#include <iomanip>`: Used for formatting output (though not strictly utilized in the final UI).
+
+**Lines 8-10:** OpenCV inclusion.
+`#include <opencv2/opencv.hpp>`: Includes the OpenCV library headers. As noted in the comment, OpenCV is strictly used for I/O operations: loading the video, resizing frames, and drawing UI elements (rectangles, text, arrows). All core mathematical pipelines are built from scratch.
+
+**Lines 12-13:** Namespaces.
+* `using namespace std;`: Allows using standard library functions without typing the `std::` prefix.
+* `using namespace cv;`: Allows using OpenCV functions without typing the `cv::` prefix.
+
+---
+### 1. FIXED-POINT RGB TO GRAYSCALE
+
+**Line 18:** `void rgb_to_gray_fixed_point(const uint8_t* bgr, uint8_t* gray, int width, int height) {`
+Defines the function to convert a color image to grayscale. `const uint8_t* bgr` is the input 1D array representing the 2D color image. `uint8_t* gray` is the output array. `width` and `height` are the image dimensions.
+
+**Line 19:** `int total_pixels = width * height;`
+Calculates the total number of pixels by multiplying width by height.
+
+**Line 20:** `for (int i = 0; i < total_pixels; ++i) {`
+Loops sequentially through every single pixel in the image array.
+
+**Line 21:** `int b = bgr[i * 3 + 0];`
+Extracts the Blue component of the current pixel. Since the input array `bgr` stores pixels sequentially as B, G, R, B, G, R..., pixel `i` starts at index `i * 3`. The `+ 0` offset gets the first channel (Blue).
+
+**Line 22:** `int g = bgr[i * 3 + 1];`
+Extracts the Green component, located at the `+ 1` offset.
+
+**Line 23:** `int r = bgr[i * 3 + 2];`
+Extracts the Red component, located at the `+ 2` offset.
+
+**Line 24-25:** `gray[i] = (uint8_t)((r * 77 + g * 150 + b * 29) >> 8);`
+Performs the fixed-point math. The standard conversion formula is `Gray = R*0.299 + G*0.587 + B*0.114`. To avoid slow floats, we multiply the weights by 256 (2^8): `0.299 * 256 ≈ 77`, `0.587 * 256 ≈ 150`, `0.114 * 256 ≈ 29`. We multiply the pixel values by these integers, sum them up, and then divide by 256 using a very fast right bit-shift `>> 8`. These specific numbers (77, 150, 29) do not vary by dataset; they are based on the human eye's biological sensitivity to different light frequencies. The result is cast to `uint8_t` (0-255) and stored in the `gray` array.
+
+---
+### 2. PERONA-MALIK ANISOTROPIC DIFFUSION
+
+**Line 32:** `void perona_malik_diffusion(float* img, int width, int height, int iters = 5, float lambda = 0.2f, float K = 15.0f) {`
+Applies PDE diffusion.
+*   `img`: The grayscale image as a 1D float array.
+*   `iters = 5`: Number of time steps. More iterations = more smoothing.
+*   `lambda = 0.2f`: Integration step (dt). Must be <= 0.25 for 2D numerical stability; otherwise, the math diverges to infinity.
+*   `K = 15.0f`: Edge threshold parameter. Gradients (pixel differences) smaller than K are smoothed; gradients larger than K are preserved as "edges". This can vary based on the specific camera noise of the dataset.
+
+**Line 33-34:** `float* temp = new float[width * height]; memcpy(temp, img, width * height * sizeof(float));`
+Allocates a temporary floating-point array and copies the original image into it. We need a temporary buffer because we update pixels simultaneously; updating the main array immediately would corrupt the calculations for neighboring pixels.
+
+**Line 36:** `for (int iter = 0; iter < iters; ++iter) {`
+Starts the loop for the number of diffusion iterations.
+
+**Line 37-38:** `for (int y = 1; y < height - 1; ++y) { for (int x = 1; x < width - 1; ++x) {`
+Nested loops iterating over x,y coordinates. Starts at 1 and ends at width-1/height-1 to avoid attempting to read pixels outside the image boundaries when checking neighbors.
+
+**Line 39:** `int idx = y * width + x;`
+Calculates the 1D array index for the 2D coordinate (x, y).
+
+**Line 40:** `float I = img[idx];`
+Reads the intensity of the current central pixel.
+
+**Lines 42-46:** (e.g., `float dN = img[idx - width] - I;`)
+Calculates the numerical spatial gradients (intensity differences) between the central pixel `I` and its 4 neighbors: North (up: `idx - width`), South (down: `idx + width`), East (right: `idx + 1`), West (left: `idx - 1`).
+
+**Lines 48-50:** `float K_sq = K * K;`
+Pre-calculates the square of the edge threshold `K` to save multiplication operations inside the inner loop.
+
+**Lines 51-54:** (e.g., `float cN = 1.0f / (1.0f + (dN * dN) / K_sq);`)
+Calculates the diffusion coefficient (conductance) for each direction using Perona-Malik Formulation 2. If the intensity difference `d` is small (flat road), `(d/K)^2` is close to 0, making `c` close to 1 (high diffusion/blur). If `d` is large (lane marking), `(d/K)^2` is large, making `c` approach 0 (stops diffusion to preserve the edge).
+
+**Line 56:** `temp[idx] = I + lambda * (cN * dN + cS * dS + cE * dE + cW * dW);`
+Updates the central pixel. It takes the original intensity `I` and adds the flow of intensity from neighbors, modulated by `lambda` and the conductance values. Saved to `temp`.
+
+**Line 59:** `memcpy(img, temp, width * height * sizeof(float));`
+At the end of an iteration, copies the updated `temp` array back to the main `img` array so the next time step builds upon it.
+
+**Line 61:** `delete[] temp;`
+Frees the dynamically allocated memory to prevent RAM leaks.
+
+---
+### 3. SVD BACKGROUND SUBTRACTION (POWER ITERATION)
+
+**Line 68:** `void power_iteration_svd(const float* A, int N, int M, float* u, float* v) {`
+Computes the dominant singular vectors of Matrix A.
+*   `A`: Input matrix of size N x M (flattened to 1D).
+*   `u`: Output array for the left singular vector (size N).
+*   `v`: Output array for the right singular vector (size M).
+
+**Line 70-79:** `float* ATA = new float[M * M]; ... ATA[i * M + j] = sum;`
+Allocates memory and performs standard matrix multiplication to compute the covariance matrix `A^T * A` (size M x M). The nested loops compute the dot product of every column with every other column.
+
+**Line 82:** `for (int i = 0; i < M; ++i) v[i] = 1.0f; // Initialize`
+Initializes the eigenvector guess `v` with 1.0s.
+
+**Line 84-96:** Power Iteration loop.
+Repeats 10 times (usually enough for convergence).
+It multiplies the matrix `ATA` by the vector `v` (`temp = ATA * v`).
+It calculates the magnitude (norm) of the resulting vector using the Pythagorean theorem (`norm = sqrt(norm)`).
+It divides every element of the new vector by `norm` to make it length 1. Over time, multiplying by the matrix repeatedly pulls the vector towards the direction of maximum variance (the dominant eigenvector).
+
+**Line 99-110:** `for (int j = 0; j < M; ++j) { u[i] += A[i * M + j] * v[j]; }`
+Calculates the corresponding left singular vector `u` by multiplying the original matrix `A` by the converged right singular vector `v`. Normalizes `u` to unit length, wrapping it in an `if (u_norm > 1e-5)` to prevent fatal division by zero errors if the matrix was empty.
+
+---
+### 4. ADMM & CONJUGATE GRADIENT FOR TRAJECTORY
+
+**Line 119:** `void conjugate_gradient(const float* Q, const float* b, float* x, int n, int max_iters) {`
+Solves `Qx = b`. Used inside ADMM. It's much faster than matrix inversion.
+
+**Line 120-134:**
+Allocates memory for residual `r`, search direction `p`, and `Qp`.
+Initializes residual `r0 = b - Q * x0` (the error of the initial guess). Sets initial search direction `p = r`. Calculates squared magnitude of residual `rsold`.
+
+**Line 135-155:** Main CG Loop.
+*   `Qp = Q * p`: Matrix-vector multiplication.
+*   `alpha = rsold / (pQp + 1e-8f)`: Calculates how far to move along direction `p`. `1e-8f` prevents division by zero.
+*   `x[i] += alpha * p[i]`: Updates the solution vector `x`.
+*   `r[i] -= alpha * Qp[i]`: Updates the residual error.
+*   `if (sqrt(rsnew) < 1e-4) break;`: If error is tiny, stop early to save CPU cycles.
+*   `p[i] = r[i] + (rsnew / rsold) * p[i]`: Updates the next search direction, ensuring it is mathematically "conjugate" (orthogonal) to all previous steps.
+
+**Line 159:** `void admm_jerk_minimization(float* traj_x, int n, int mdp_action) {`
+Generates a smooth trajectory (velocity over time `traj_x` of size `n`). Minimizes "jerk" (sudden acceleration) while enforcing velocity >= 0.
+
+**Line 162-169:** `float rho = 1.0f;`
+`rho` is the ADMM penalty parameter dictating how strictly constraints are enforced. Allocates memory for the modified matrix `Q_rho`, slack variable `z`, dual variable `y`, and target vector `b`.
+
+**Line 171-179:** `Q_rho[i*n + j] = val + (i==j ? rho : 0);`
+Constructs a tridiagonal matrix `Q`. In finite difference mathematics, a tridiagonal matrix of [ -1, 2, -1 ] computes the second derivative (related to jerk/smoothness). Adds `rho` to the diagonal as required by ADMM formula.
+
+**Line 181-184:** `float target_drift = 0.5f; ...`
+Sets a baseline target velocity based on the `mdp_action` passed in. (Accel = 0.8, Brake = 0.1, Maintain = 0.5).
+
+**Line 186-205:** ADMM Loop (5 iterations).
+*   **1. x-update**: Prepares vector `b = rho(z - y) + dynamic_b`. It dynamically slopes `dynamic_b` up or down over time `i/n` based on accel/brake to shape a curve, not a flat line. Solves the system using `conjugate_gradient`.
+*   **2. z-update**: `z[i] = std::max(0.0f, traj_x[i] + y[i]);` Projects the solution to be strictly positive (velocity >= 0). A car cannot drive in reverse on the highway.
+*   **3. y-update**: `y[i] += traj_x[i] - z[i];` Updates the Lagrange multiplier based on how badly the non-negative constraint was violated.
+
+---
+### 5. MARKOV DECISION PROCESS (VALUE ITERATION)
+
+**Lines 213-215:** `enum DistState ... enum Action`
+Defines human-readable integer states. Distance (FAR=0, MED=1, CLOSE=2). Speed (SLOW=0, FAST=1). Actions (ACCEL=0, MAINTAIN=1, BRAKE=2). Total states = 3 * 2 = 6.
+
+**Line 217-228:** `int mdp_next_state(...) {`
+Transition model. Predicts the next state given an action.
+*   Accel makes speed FAST. Brake makes it SLOW.
+*   If FAST, distance to obstacles decreases (`next_dist++`).
+*   If BRAKING, distance increases (`next_dist--`).
+*   Clamps distance between 0 and 2. Returns a combined state integer `(dist * 2 + speed)`.
+
+**Line 230-236:** `float mdp_reward(...) {`
+Defines the goal parameters.
+*   `r -= 100` if CLOSE and FAST (massive penalty for crashing).
+*   `r += 50` if CLOSE and BRAKE (reward for evasive safety).
+*   `r += 20` if FAR and ACCEL (reward for driving efficiently).
+
+**Line 238-257:** `void mdp_value_iteration(int* policy) {`
+Solves the MDP offline.
+*   Initializes Values `V` to 0.
+*   Loops 50 times (Value Iteration).
+*   For every possible state (0 to 5) and every possible action (0 to 2), it calculates the Q-value: `q = mdp_reward(...) + 0.9f * V[next_state]`. `0.9f` is Gamma, the discount factor (current rewards are slightly better than future ones).
+*   Finds the action that yields the highest Q-value (`max_q`) and saves it to the `policy` array, updating the new value of the state.
+
+---
+### MAIN APPLICATION (UI & PIPELINE)
+
+**Line 262-270:** `int main(int argc, char** argv) {`
+Entry point. Sets default video path. Opens video via `VideoCapture cap(video_path);`.
+
+**Line 272-280:**
+Defines UI dimensions (1600x900) and `Rect` structures to define regions for Video, MDP text, Legend, and Turn indicators.
+
+**Line 283-284:** `int mdp_policy[6] = {0}; mdp_value_iteration(mdp_policy);`
+Calculates the optimal MDP policy into an array *before* the video starts. This array acts as an instantaneous lookup table during driving.
+
+**Lines 286-293:**
+Sets up SVD variables and creates the OpenCV UI window.
+
+**Line 298:** `while (cap.read(frame)) {`
+Main real-time loop. Runs for every frame of the video.
+
+**Line 300-306:**
+Clears canvas with dark gray. Resizes frame to 800x600. Calls `rgb_to_gray_fixed_point` to get a fast grayscale image.
+
+**Line 308-314:**
+Converts 8-bit image to 32-bit floats. Runs `perona_malik_diffusion` (2 iterations, 0.2 step, 20.0 threshold) to smooth the road surface. Converts back to 8-bit.
+
+**Line 316-321:**
+Resizes the smoothed image down to a tiny 64x64 (`SVD_W`, `SVD_H`) matrix. Converts to float normalized 0.0 to 1.0. This extreme downscaling allows spatial analysis to run in under 1 millisecond. Declares a static `bg_model` array that persists between frames.
+
+**Line 323-342:** Motion tracking loop.
+*   `bg_model[i] = 0.95f * bg_model[i] + 0.05f * p;`: Applies an Exponential Moving Average. The background slowly updates to match the road. Fast moving cars pass too quickly to become part of the background.
+*   `float diff = abs(p - bg_model[i]);`: The residual. High diff means a pixel doesn't match the road (it's a moving car).
+*   `if (y > SVD_H / 2 && diff > 0.1f)`: Analyzes only the bottom half of the image (the immediate road ahead). Filters out tiny noise (<0.1 diff).
+*   Sums the residual motion into `left_motion`, `center_motion`, and `right_motion` variables by dividing the screen width into 3 columns (`x < SVD_W / 3`, etc.).
+
+**Line 344-348:** MDP Decision logic.
+*   `int current_dist = (center_motion > 2.5f) ? CLOSE : FAR;`: If center motion is high (>2.5 threshold based on dataset object size), an obstacle is CLOSE.
+*   Sets current speed state, calculates the state index, and fetches the `chosen_action` instantly from the pre-calculated `mdp_policy` array.
+
+**Line 350-354:** ADMM Trajectory Generation.
+Passes `chosen_action` to `admm_jerk_minimization` to generate a 50-step smooth velocity curve (though not visually graphed in this specific UI layout, the math runs).
+
+**Line 356-402:** UI Rendering (Video & Text).
+*   `cvtColor`: Converts 1-channel grayscale to 3-channel BGR so we can draw colored boxes on it.
+*   If `current_dist == CLOSE`, draws a Red bounding box and "OBSTACLE DETECTED" text using `rectangle` and `putText`.
+*   Draws standard UI borders and texts mapping the current MDP state and Bellman optimal action.
+
+**Line 407-421:** Dynamic Lane Evasion Logic.
+*   `if (current_dist == CLOSE)`: If braking due to a front obstacle...
+*   `if (left_motion < 1.5f && left_motion <= right_motion)`: Checks if the left lane is clear (motion < 1.5 threshold, tighter than the front 2.5 threshold to ensure high safety) and has less traffic than the right. If so, `turn_left = true`.
+*   Else checks the right lane similarly.
+
+**Line 425-435:**
+Draws navigation arrows (`arrowedLine`) in Green if turning, or Grey if not. Prints explicitly hardcoded reasoning logic text at the bottom based on the evasion flags.
+
+**Line 437-440:** `imshow(...); waitKey(30);`
+Shows the final drawn `canvas` on the monitor. Pauses for 30 milliseconds (achieving roughly 30 FPS). If the user presses the ESC key (ASCII code 27), the `break` command exits the while loop.
+
+**Line 443-447:**
+`cap.release(); destroyAllWindows();`: Releases the video file lock and destroys the OpenCV window. Returns 0 to tell the OS the program exited successfully.
