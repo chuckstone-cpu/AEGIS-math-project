@@ -1,0 +1,2 @@
+# CARLA Simulation Settings
+Selected Vehicle Blueprint ID: vehicle.mini.cooper_s
