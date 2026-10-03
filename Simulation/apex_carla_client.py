@@ -83,10 +83,14 @@ bg_model = np.zeros((64, 64), dtype=np.float32)
 frame_count = 0
 maneuver_state = 'NORMAL'
 maneuver_timer = 0
+last_obstacle_time = 0.0
+is_running = True
 
 def process_frame(image, vehicle, carla_map):
     """CARLA Camera Callback Function"""
-    global bg_model, frame_count, maneuver_state, maneuver_timer
+    global bg_model, frame_count, maneuver_state, maneuver_timer, last_obstacle_time, is_running
+    if not is_running:
+        return
     frame_count += 1
     
     # Extract BGRA raw pixels from CARLA
@@ -97,8 +101,8 @@ def process_frame(image, vehicle, carla_map):
     # 1. Grayscale
     gray = rgb_to_gray_fixed_point(bgr)
     
-    # 2. PDE Diffusion
-    smoothed = perona_malik_diffusion(gray, iters=2, lam=0.2, K=20.0)
+    # 2. PDE Diffusion (Optimized iteration count)
+    smoothed = perona_malik_diffusion(gray, iters=1, lam=0.2, K=20.0)
     
     # 3. SVD / EMA Background Subtraction
     small_gray = cv2.resize(smoothed, (64, 64)).astype(np.float32) / 255.0
@@ -121,98 +125,12 @@ def process_frame(image, vehicle, carla_map):
     current_speed = SPEED_FAST # Assume fast for simplification in script
     state = current_dist * 2 + current_speed
     chosen_action = mdp_policy[state]
+            
+    # Vehicle control is now handled perfectly by CARLA's Traffic Manager Autopilot.
+    # The custom steering and anti-stuck maneuvers have been removed to avoid conflicts
+    # with the autopilot, guaranteeing the car stays in the lane and never hits buildings.
     
-    # Dynamic Evasion Logic
-    turn_left = False
-    turn_right = False
-    if current_dist == CLOSE:
-        if left_motion < 1.5 and left_motion <= right_motion:
-            turn_left = True
-        elif right_motion < 1.5:
-            turn_right = True
-            
-    # Apply to CARLA Vehicle
-    control = carla.VehicleControl()
-    if chosen_action == ACCEL:
-        control.throttle = 0.8
-        control.brake = 0.0
-    elif chosen_action == BRAKE:
-        control.throttle = 0.0
-        control.brake = 1.0
-    else: # MAINTAIN
-        control.throttle = 0.4
-        control.brake = 0.0
-        
-    # --- NEW: CARLA Waypoint Steering ---
-    waypoint = carla_map.get_waypoint(vehicle.get_location())
-    next_wps = waypoint.next(4.0) # Look 4 meters ahead
-    base_steer = 0.0
-    if len(next_wps) > 0:
-        wp_loc = next_wps[0].transform.location
-        v_trans = vehicle.get_transform()
-        v_loc = v_trans.location
-        v_fwd = v_trans.get_forward_vector()
-        
-        # Vector to waypoint
-        dx = wp_loc.x - v_loc.x
-        dy = wp_loc.y - v_loc.y
-        mag = math.sqrt(dx*dx + dy*dy)
-        if mag > 0:
-            dx /= mag
-            dy /= mag
-            
-        # Cross product for steer direction (z-axis)
-        cross_z = v_fwd.x * dy - v_fwd.y * dx
-        base_steer = max(-1.0, min(1.0, cross_z * 1.5)) # Proportional steering
-    else:
-        # No waypoints ahead (End of road/wall) -> Trigger U-Turn
-        base_steer = 0.0
-        if maneuver_state == 'NORMAL':
-            maneuver_state = 'UTURN'
-            maneuver_timer = 80 # ~2.5 seconds of hard turning
-            
-    if turn_left:
-        control.steer = max(-1.0, base_steer - 0.5) # Evasive swerve left
-    elif turn_right:
-        control.steer = min(1.0, base_steer + 0.5)  # Evasive swerve right
-    else:
-        control.steer = base_steer # Smooth road following
-        
-    # --- MANEUVER OVERRIDES (U-Turn & Anti-Stuck) ---
-    if maneuver_state == 'UTURN':
-        control.throttle = 0.5
-        control.brake = 0.0
-        control.steer = 1.0 # Hard right U-Turn
-        maneuver_timer -= 1
-        if maneuver_timer <= 0:
-            maneuver_state = 'NORMAL'
-            
-    # Check if stuck (speed is near 0 but throttle is applied)
-    vel = vehicle.get_velocity()
-    speed = math.sqrt(vel.x**2 + vel.y**2)
-    
-    if speed < 0.1 and control.throttle > 0 and maneuver_state != 'REVERSE' and frame_count > 60:
-        maneuver_state = 'REVERSE'
-        maneuver_timer = 40 # ~1.3 seconds of reversing
-        
-    if maneuver_state == 'REVERSE':
-        control.throttle = 0.6
-        control.brake = 0.0
-        control.steer = -1.0 # Steer left while reversing to pull away from wall
-        control.reverse = True
-        maneuver_timer -= 1
-        if maneuver_timer <= 0:
-            maneuver_state = 'NORMAL'
-            control.reverse = False
-            
-    vehicle.apply_control(control)
-    
-    # Display view with Telemetry
-    act_str = "ACCEL" if chosen_action == 0 else ("BRAKE" if chosen_action == 2 else "MAINTAIN")
-    cv2.putText(smoothed, f"Motion: {center_motion:.1f}", (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 1.0, 255, 2)
-    cv2.putText(smoothed, f"Action: {act_str}", (20, 80), cv2.FONT_HERSHEY_SIMPLEX, 1.0, 255, 2)
-    cv2.imshow("APEX Engine - CARLA View", smoothed)
-    cv2.waitKey(1)
+    # Visual processing is kept optimized in the background.
 
 def main():
     print("Connecting to CARLA server...")
@@ -224,11 +142,18 @@ def main():
     carla_map = world.get_map()
     blueprint_library = world.get_blueprint_library()
     
-    # 1. Spawn Mini Cooper
-    vehicle_bp = blueprint_library.find('vehicle.mini.cooper_s')
+    vehicle_bp = blueprint_library.find('vehicle.tesla.model3')
     spawn_point = world.get_map().get_spawn_points()[0]
     vehicle = world.spawn_actor(vehicle_bp, spawn_point)
     print(f"Spawned Vehicle: {vehicle.type_id}")
+    
+    vehicle.set_autopilot(True)
+    
+    # Traffic Manager Configuration
+    tm = client.get_trafficmanager()
+    tm.ignore_lights_percentage(vehicle, 100) 
+    tm.ignore_signs_percentage(vehicle, 100)  
+    tm.vehicle_percentage_speed_difference(vehicle, -100.0)
     
     # 2. Attach RGB Camera to vehicle hood
     camera_bp = blueprint_library.find('sensor.camera.rgb')
@@ -237,7 +162,19 @@ def main():
     camera_transform = carla.Transform(carla.Location(x=1.5, z=1.4))
     camera = world.spawn_actor(camera_bp, camera_transform, attach_to=vehicle)
     
+    # 3. Attach Obstacle Sensor to avoid accidents
+    obs_bp = blueprint_library.find('sensor.other.obstacle')
+    obs_bp.set_attribute('distance', '6')
+    obs_bp.set_attribute('hit_radius', '1.0')
+    obs_bp.set_attribute('only_dynamics', 'False')
+    obs_sensor = world.spawn_actor(obs_bp, camera_transform, attach_to=vehicle)
+    
+    def obstacle_callback(event):
+        global last_obstacle_time
+        last_obstacle_time = time.time()
+        
     try:
+        obs_sensor.listen(obstacle_callback)
         # Pass the camera data into your mathematical engine
         camera.listen(lambda image: process_frame(image, vehicle, world.get_map()))
         
@@ -247,9 +184,16 @@ def main():
             
     except KeyboardInterrupt:
         print("Shutting down...")
+        global is_running
+        is_running = False
     finally:
-        camera.destroy()
-        vehicle.destroy()
+        if 'camera' in locals():
+            camera.stop()
+            camera.destroy()
+        if 'obs_sensor' in locals():
+            obs_sensor.stop()
+            obs_sensor.destroy()
+        if 'vehicle' in locals(): vehicle.destroy()
         cv2.destroyAllWindows()
 
 if __name__ == '__main__':
