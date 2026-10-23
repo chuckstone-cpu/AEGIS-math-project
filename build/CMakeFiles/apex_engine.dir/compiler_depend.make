@@ -197,16 +197,107 @@ CMakeFiles/apex_engine.dir/apex_engine.cpp.obj: C:/Users/SATHYANARAYANAN.T/My_Do
   C:/MinGW/include/c++/13.2.0/x86_64-w64-mingw32/bits/messages_members.h \
   C:/MinGW/include/c++/13.2.0/x86_64-w64-mingw32/bits/os_defines.h \
   C:/MinGW/include/c++/13.2.0/x86_64-w64-mingw32/bits/time_members.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/adxintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/amxbf16intrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/amxcomplexintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/amxfp16intrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/amxint8intrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/amxtileintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/avx2intrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/avx5124fmapsintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/avx5124vnniwintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/avx512bf16intrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/avx512bf16vlintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/avx512bitalgintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/avx512bwintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/avx512cdintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/avx512dqintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/avx512erintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/avx512fintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/avx512fp16intrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/avx512fp16vlintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/avx512ifmaintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/avx512ifmavlintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/avx512pfintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/avx512vbmi2intrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/avx512vbmi2vlintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/avx512vbmiintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/avx512vbmivlintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/avx512vlbwintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/avx512vldqintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/avx512vlintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/avx512vnniintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/avx512vnnivlintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/avx512vp2intersectintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/avx512vp2intersectvlintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/avx512vpopcntdqintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/avx512vpopcntdqvlintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/avxifmaintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/avxintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/avxneconvertintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/avxvnniint8intrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/avxvnniintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/bmi2intrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/bmiintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/cetintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/cldemoteintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/clflushoptintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/clwbintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/clzerointrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/cmpccxaddintrin.h \
   C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/emmintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/enqcmdintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/f16cintrin.h \
   C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/float.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/fmaintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/fxsrintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/gfniintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/hresetintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/ia32intrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/immintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/keylockerintrin.h \
   C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/limits.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/lwpintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/lzcntintrin.h \
   C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/mm_malloc.h \
   C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/mmintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/movdirintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/mwaitintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/mwaitxintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/omp.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/pconfigintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/pkuintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/pmmintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/popcntintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/prfchiintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/prfchwintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/raointintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/rdseedintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/rtmintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/serializeintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/sgxintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/shaintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/smmintrin.h \
   C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/stdarg.h \
   C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/stddef.h \
   C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/stdint.h \
   C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/syslimits.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/tbmintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/tmmintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/tsxldtrkintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/uintrintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/vaesintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/vpclmulqdqintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/waitpkgintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/wbnoinvdintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/wmmintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/x86gprintrin.h \
   C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/xmmintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/xsavecintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/xsaveintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/xsaveoptintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/xsavesintrin.h \
+  C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/xtestintrin.h \
   C:/MinGW/x86_64-w64-mingw32/include/_mingw.h \
   C:/MinGW/x86_64-w64-mingw32/include/_mingw_mac.h \
   C:/MinGW/x86_64-w64-mingw32/include/_mingw_off_t.h \
@@ -253,6 +344,15 @@ CMakeFiles/apex_engine.dir/apex_engine.cpp.obj: C:/Users/SATHYANARAYANAN.T/My_Do
   C:/MinGW/x86_64-w64-mingw32/include/vadefs.h \
   C:/MinGW/x86_64-w64-mingw32/include/wchar.h \
   C:/MinGW/x86_64-w64-mingw32/include/wctype.h \
+  C:/Program\ Files/Webots/include/controller/c/webots/camera.h \
+  C:/Program\ Files/Webots/include/controller/c/webots/camera_recognition_object.h \
+  C:/Program\ Files/Webots/include/controller/c/webots/device.h \
+  C:/Program\ Files/Webots/include/controller/c/webots/lidar.h \
+  C:/Program\ Files/Webots/include/controller/c/webots/lidar_point.h \
+  C:/Program\ Files/Webots/include/controller/c/webots/nodes.h \
+  C:/Program\ Files/Webots/include/controller/c/webots/robot.h \
+  C:/Program\ Files/Webots/include/controller/c/webots/types.h \
+  C:/Program\ Files/Webots/include/controller/c/webots/vehicle/driver.h \
   C:/opencv_mingw/include/opencv2/calib3d.hpp \
   C:/opencv_mingw/include/opencv2/core.hpp \
   C:/opencv_mingw/include/opencv2/core/affine.hpp \
@@ -368,10 +468,6 @@ C:/opencv_mingw/include/opencv2/video/tracking.hpp:
 
 C:/opencv_mingw/include/opencv2/stitching/warpers.hpp:
 
-C:/opencv_mingw/include/opencv2/stitching/detail/warpers_inl.hpp:
-
-C:/opencv_mingw/include/opencv2/stitching/detail/warpers.hpp:
-
 C:/opencv_mingw/include/opencv2/stitching/detail/util_inl.hpp:
 
 C:/opencv_mingw/include/opencv2/stitching/detail/seam_finders.hpp:
@@ -381,8 +477,6 @@ C:/opencv_mingw/include/opencv2/video.hpp:
 C:/opencv_mingw/include/opencv2/stitching/detail/motion_estimators.hpp:
 
 C:/opencv_mingw/include/opencv2/stitching/detail/matchers.hpp:
-
-C:/opencv_mingw/include/opencv2/stitching/detail/exposure_compensate.hpp:
 
 C:/opencv_mingw/include/opencv2/stitching/detail/blenders.hpp:
 
@@ -402,12 +496,6 @@ C:/opencv_mingw/include/opencv2/objdetect/aruco_detector.hpp:
 
 C:/opencv_mingw/include/opencv2/objdetect/aruco_board.hpp:
 
-C:/opencv_mingw/include/opencv2/video/background_segm.hpp:
-
-C:/opencv_mingw/include/opencv2/objdetect.hpp:
-
-C:/opencv_mingw/include/opencv2/imgproc/segmentation.hpp:
-
 C:/opencv_mingw/include/opencv2/imgcodecs.hpp:
 
 C:/opencv_mingw/include/opencv2/highgui.hpp:
@@ -418,25 +506,17 @@ C:/opencv_mingw/include/opencv2/flann/saving.h:
 
 C:/opencv_mingw/include/opencv2/flann/sampling.h:
 
-C:/opencv_mingw/include/opencv2/flann/result_set.h:
-
 C:/opencv_mingw/include/opencv2/flann/nn_index.h:
 
 C:/opencv_mingw/include/opencv2/flann/miniflann.hpp:
 
-C:/opencv_mingw/include/opencv2/flann/matrix.h:
-
 C:/opencv_mingw/include/opencv2/flann/lsh_table.h:
-
-C:/opencv_mingw/include/opencv2/flann/logger.h:
 
 C:/opencv_mingw/include/opencv2/flann/linear_index.h:
 
 C:/opencv_mingw/include/opencv2/flann/kmeans_index.h:
 
 C:/opencv_mingw/include/opencv2/flann/kdtree_single_index.h:
-
-C:/opencv_mingw/include/opencv2/flann/kdtree_index.h:
 
 C:/opencv_mingw/include/opencv2/flann/index_testing.h:
 
@@ -447,10 +527,6 @@ C:/opencv_mingw/include/opencv2/flann/ground_truth.h:
 C:/opencv_mingw/include/opencv2/flann/flann_base.hpp:
 
 C:/opencv_mingw/include/opencv2/flann/defines.h:
-
-C:/opencv_mingw/include/opencv2/imgproc.hpp:
-
-C:/opencv_mingw/include/opencv2/flann/config.h:
 
 C:/opencv_mingw/include/opencv2/flann/composite_index.h:
 
@@ -463,8 +539,6 @@ C:/opencv_mingw/include/opencv2/dnn/layer.hpp:
 C:/opencv_mingw/include/opencv2/dnn/dnn.inl.hpp:
 
 C:/opencv_mingw/include/opencv2/dnn/dnn.hpp:
-
-C:/opencv_mingw/include/opencv2/core/vsx_utils.hpp:
 
 C:/opencv_mingw/include/opencv2/core/utils/logtag.hpp:
 
@@ -480,8 +554,6 @@ C:/opencv_mingw/include/opencv2/core/ovx.hpp:
 
 C:/opencv_mingw/include/opencv2/core/operations.hpp:
 
-C:/opencv_mingw/include/opencv2/core/neon_utils.hpp:
-
 C:/opencv_mingw/include/opencv2/core/matx.inl.hpp:
 
 C:/opencv_mingw/include/opencv2/core/matx.hpp:
@@ -496,15 +568,7 @@ C:/opencv_mingw/include/opencv2/core/cvstd.hpp:
 
 C:/opencv_mingw/include/opencv2/core/cvdef.h:
 
-C:/opencv_mingw/include/opencv2/ml/ml.inl.hpp:
-
-C:/opencv_mingw/include/opencv2/core/cv_cpu_dispatch.h:
-
-C:/opencv_mingw/include/opencv2/core/cuda_types.hpp:
-
 C:/opencv_mingw/include/opencv2/core/cuda.inl.hpp:
-
-C:/opencv_mingw/include/opencv2/core/cuda.hpp:
 
 C:/opencv_mingw/include/opencv2/core/check.hpp:
 
@@ -512,17 +576,163 @@ C:/opencv_mingw/include/opencv2/core/types.hpp:
 
 C:/opencv_mingw/include/opencv2/core/bufferpool.hpp:
 
+C:/opencv_mingw/include/opencv2/core/base.hpp:
+
+C:/Program\ Files/Webots/include/controller/c/webots/vehicle/driver.h:
+
+C:/Program\ Files/Webots/include/controller/c/webots/robot.h:
+
+C:/Program\ Files/Webots/include/controller/c/webots/nodes.h:
+
+C:/Program\ Files/Webots/include/controller/c/webots/device.h:
+
+C:/MinGW/x86_64-w64-mingw32/include/wchar.h:
+
+C:/MinGW/x86_64-w64-mingw32/include/vadefs.h:
+
+C:/opencv_mingw/include/opencv2/core.hpp:
+
+C:/MinGW/x86_64-w64-mingw32/include/sys/types.h:
+
+C:/MinGW/x86_64-w64-mingw32/include/sys/timeb.h:
+
+C:/MinGW/x86_64-w64-mingw32/include/stdlib.h:
+
+C:/opencv_mingw/include/opencv2/dnn/utils/inference_engine.hpp:
+
+C:/MinGW/x86_64-w64-mingw32/include/stdio.h:
+
+C:/MinGW/x86_64-w64-mingw32/include/stddef.h:
+
+C:/MinGW/x86_64-w64-mingw32/include/signal.h:
+
+C:/opencv_mingw/include/opencv2/core/version.hpp:
+
+C:/MinGW/x86_64-w64-mingw32/include/sec_api/wchar_s.h:
+
+C:/MinGW/x86_64-w64-mingw32/include/sec_api/stdlib_s.h:
+
+C:/MinGW/x86_64-w64-mingw32/include/sec_api/stdio_s.h:
+
+C:/opencv_mingw/include/opencv2/dnn/version.hpp:
+
+C:/MinGW/x86_64-w64-mingw32/include/sdks/_mingw_ddk.h:
+
+C:/MinGW/x86_64-w64-mingw32/include/pthread_unistd.h:
+
+C:/MinGW/x86_64-w64-mingw32/include/pthread_signal.h:
+
+C:/MinGW/x86_64-w64-mingw32/include/pthread_compat.h:
+
+C:/opencv_mingw/include/opencv2/core/optim.hpp:
+
+C:/MinGW/x86_64-w64-mingw32/include/pthread.h:
+
+C:/MinGW/x86_64-w64-mingw32/include/math.h:
+
+C:/opencv_mingw/include/opencv2/opencv.hpp:
+
+C:/MinGW/x86_64-w64-mingw32/include/locale.h:
+
+C:/MinGW/x86_64-w64-mingw32/include/errno.h:
+
+C:/MinGW/x86_64-w64-mingw32/include/crtdefs.h:
+
+C:/opencv_mingw/include/opencv2/opencv_modules.hpp:
+
+C:/opencv_mingw/include/opencv2/flann/lsh_index.h:
+
+C:/MinGW/x86_64-w64-mingw32/include/sec_api/sys/timeb_s.h:
+
+C:/MinGW/x86_64-w64-mingw32/include/corecrt_wstdlib.h:
+
+C:/MinGW/x86_64-w64-mingw32/include/corecrt_stdio_config.h:
+
+C:/MinGW/x86_64-w64-mingw32/include/assert.h:
+
+C:/MinGW/x86_64-w64-mingw32/include/_timeval.h:
+
+C:/MinGW/x86_64-w64-mingw32/include/_mingw_stdarg.h:
+
+C:/MinGW/x86_64-w64-mingw32/include/_mingw_stat64.h:
+
+C:/MinGW/x86_64-w64-mingw32/include/_mingw_secapi.h:
+
+C:/MinGW/x86_64-w64-mingw32/include/_mingw_mac.h:
+
+C:/opencv_mingw/include/opencv2/flann/logger.h:
+
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/xsavesintrin.h:
+
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/xsaveoptintrin.h:
+
+C:/opencv_mingw/include/opencv2/stitching/detail/warpers_inl.hpp:
+
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/xsaveintrin.h:
+
+C:/MinGW/x86_64-w64-mingw32/include/corecrt_startup.h:
+
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/xsavecintrin.h:
+
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/xmmintrin.h:
+
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/wbnoinvdintrin.h:
+
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/vpclmulqdqintrin.h:
+
+C:/opencv_mingw/include/opencv2/flann/matrix.h:
+
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/uintrintrin.h:
+
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/tsxldtrkintrin.h:
+
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/stdint.h:
+
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/stdarg.h:
+
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/sgxintrin.h:
+
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/rtmintrin.h:
+
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/raointintrin.h:
+
+C:/opencv_mingw/include/opencv2/video/background_segm.hpp:
+
+C:/opencv_mingw/include/opencv2/objdetect.hpp:
+
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/prfchwintrin.h:
+
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/pkuintrin.h:
+
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/pconfigintrin.h:
+
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/omp.h:
+
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/mwaitxintrin.h:
+
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/mwaitintrin.h:
+
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/movdirintrin.h:
+
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/mmintrin.h:
+
+C:/opencv_mingw/include/opencv2/core/saturate.hpp:
+
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/mm_malloc.h:
+
+C:/MinGW/x86_64-w64-mingw32/include/_mingw_off_t.h:
+
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/lzcntintrin.h:
+
 C:/MinGW/include/c++/13.2.0/cwctype:
+
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/smmintrin.h:
 
 C:/MinGW/include/c++/13.2.0/exception:
 
 C:/MinGW/include/c++/13.2.0/cwchar:
 
-C:/MinGW/include/c++/13.2.0/initializer_list:
-
 C:/MinGW/include/c++/13.2.0/bits/functional_hash.h:
-
-C:/MinGW/x86_64-w64-mingw32/include/sys/timeb.h:
 
 C:/opencv_mingw/include/opencv2/flann/autotuned_index.h:
 
@@ -538,19 +748,27 @@ C:/MinGW/include/c++/13.2.0/istream:
 
 C:/MinGW/include/c++/13.2.0/climits:
 
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/avx512fp16vlintrin.h:
+
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/avx512vlintrin.h:
+
 C:/MinGW/include/c++/13.2.0/bits/utility.h:
 
 C:/opencv_mingw/include/opencv2/ml.hpp:
 
 C:/MinGW/include/c++/13.2.0/pstl/execution_defs.h:
 
-C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/stdarg.h:
-
 C:/MinGW/include/c++/13.2.0/bits/uses_allocator_args.h:
 
 C:/MinGW/include/c++/13.2.0/memory:
 
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/tmmintrin.h:
+
 C:/MinGW/include/c++/13.2.0/cfloat:
+
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/stddef.h:
+
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/avxvnniintrin.h:
 
 C:/MinGW/include/c++/13.2.0/bits/unordered_map.h:
 
@@ -564,15 +782,19 @@ C:/opencv_mingw/include/opencv2/videoio.hpp:
 
 C:/MinGW/include/c++/13.2.0/bits/unique_ptr.h:
 
+C:/opencv_mingw/include/opencv2/core/async.hpp:
+
+C:/MinGW/include/c++/13.2.0/bits/stl_vector.h:
+
 C:/opencv_mingw/include/opencv2/core/utils/logger.defines.hpp:
 
 C:/MinGW/include/c++/13.2.0/bits/stl_uninitialized.h:
 
-C:/MinGW/x86_64-w64-mingw32/include/string.h:
-
 C:/MinGW/include/c++/13.2.0/bits/stl_relops.h:
 
 C:/Users/SATHYANARAYANAN.T/My_Docs/SEM\ 3/MFC-3/Updated\ project/apex_engine.cpp:
+
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/x86gprintrin.h:
 
 C:/MinGW/include/c++/13.2.0/bits/uses_allocator.h:
 
@@ -586,15 +808,9 @@ C:/MinGW/include/c++/13.2.0/bits/stl_list.h:
 
 C:/MinGW/include/c++/13.2.0/bits/stl_heap.h:
 
-C:/MinGW/x86_64-w64-mingw32/include/pthread_unistd.h:
-
 C:/MinGW/include/c++/13.2.0/bits/stl_tree.h:
 
 C:/MinGW/include/c++/13.2.0/bits/stl_function.h:
-
-C:/opencv_mingw/include/opencv2/core/version.hpp:
-
-C:/MinGW/x86_64-w64-mingw32/include/sec_api/wchar_s.h:
 
 C:/MinGW/include/c++/13.2.0/bits/stl_algo.h:
 
@@ -610,13 +826,19 @@ C:/MinGW/include/c++/13.2.0/cerrno:
 
 C:/MinGW/include/c++/13.2.0/type_traits:
 
-C:/MinGW/x86_64-w64-mingw32/include/_mingw_stat64.h:
-
-C:/MinGW/include/c++/13.2.0/bits/std_abs.h:
-
 C:/MinGW/include/c++/13.2.0/bits/sstream.tcc:
 
 C:/MinGW/include/c++/13.2.0/bit:
+
+C:/MinGW/x86_64-w64-mingw32/include/ctype.h:
+
+C:/MinGW/include/c++/13.2.0/bits/shared_ptr.h:
+
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/cmpccxaddintrin.h:
+
+C:/opencv_mingw/include/opencv2/stitching/detail/exposure_compensate.hpp:
+
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/clzerointrin.h:
 
 C:/MinGW/include/c++/13.2.0/bits/istream.tcc:
 
@@ -628,6 +850,16 @@ C:/MinGW/include/c++/13.2.0/clocale:
 
 C:/MinGW/include/c++/13.2.0/stdlib.h:
 
+C:/opencv_mingw/include/opencv2/ml/ml.inl.hpp:
+
+C:/opencv_mingw/include/opencv2/core/cv_cpu_dispatch.h:
+
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/avx512ifmavlintrin.h:
+
+C:/MinGW/x86_64-w64-mingw32/include/limits.h:
+
+C:/MinGW/include/c++/13.2.0/bits/quoted_string.h:
+
 C:/MinGW/include/c++/13.2.0/bits/ptr_traits.h:
 
 C:/MinGW/include/c++/13.2.0/bits/exception.h:
@@ -636,13 +868,27 @@ C:/MinGW/include/c++/13.2.0/bits/nested_exception.h:
 
 C:/MinGW/include/c++/13.2.0/debug/debug.h:
 
-C:/MinGW/x86_64-w64-mingw32/include/pthread_compat.h:
-
 C:/MinGW/include/c++/13.2.0/bits/string_view.tcc:
 
 C:/MinGW/include/c++/13.2.0/bits/basic_string.tcc:
 
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/amxfp16intrin.h:
+
+C:/opencv_mingw/include/opencv2/flann/kdtree_index.h:
+
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/avx512bf16vlintrin.h:
+
+C:/opencv_mingw/include/opencv2/core/cuda.hpp:
+
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/wmmintrin.h:
+
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/fxsrintrin.h:
+
 C:/MinGW/include/c++/13.2.0/bits/cxxabi_init_exception.h:
+
+C:/opencv_mingw/include/opencv2/flann/result_set.h:
+
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/adxintrin.h:
 
 C:/MinGW/x86_64-w64-mingw32/include/corecrt.h:
 
@@ -652,7 +898,11 @@ C:/MinGW/include/c++/13.2.0/ext/alloc_traits.h:
 
 C:/MinGW/include/c++/13.2.0/bits/basic_ios.tcc:
 
-C:/MinGW/x86_64-w64-mingw32/include/sec_api/stdio_s.h:
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/avx512fintrin.h:
+
+C:/MinGW/x86_64-w64-mingw32/include/stdarg.h:
+
+C:/MinGW/include/c++/13.2.0/bits/basic_ios.h:
 
 C:/MinGW/include/c++/13.2.0/bits/algorithmfwd.h:
 
@@ -662,11 +912,15 @@ C:/MinGW/include/c++/13.2.0/pstl/glue_memory_defs.h:
 
 C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/limits.h:
 
-C:/MinGW/x86_64-w64-mingw32/include/vadefs.h:
-
 C:/MinGW/include/c++/13.2.0/tr1/poly_hermite.tcc:
 
 C:/MinGW/include/c++/13.2.0/bits/locale_facets.h:
+
+C:/Program\ Files/Webots/include/controller/c/webots/lidar.h:
+
+C:/MinGW/include/c++/13.2.0/bits/std_abs.h:
+
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/avx512vp2intersectvlintrin.h:
 
 C:/MinGW/include/c++/13.2.0/ctime:
 
@@ -680,13 +934,11 @@ C:/opencv_mingw/include/opencv2/core/mat.inl.hpp:
 
 C:/MinGW/include/c++/13.2.0/tr1/gamma.tcc:
 
-C:/MinGW/include/c++/13.2.0/bits/stl_iterator_base_funcs.h:
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/rdseedintrin.h:
 
 C:/MinGW/include/c++/13.2.0/bits/ostream_insert.h:
 
 C:/MinGW/include/c++/13.2.0/pstl/pstl_config.h:
-
-C:/MinGW/x86_64-w64-mingw32/include/corecrt_stdio_config.h:
 
 C:/MinGW/include/c++/13.2.0/bits/stl_pair.h:
 
@@ -694,7 +946,17 @@ C:/MinGW/include/c++/13.2.0/array:
 
 C:/MinGW/include/c++/13.2.0/ext/type_traits.h:
 
+C:/opencv_mingw/include/opencv2/core/vsx_utils.hpp:
+
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/avx512fp16intrin.h:
+
+C:/opencv_mingw/include/opencv2/core/neon_utils.hpp:
+
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/avx512pfintrin.h:
+
 C:/MinGW/include/c++/13.2.0/bits/refwrap.h:
+
+C:/Program\ Files/Webots/include/controller/c/webots/lidar_point.h:
 
 C:/MinGW/include/c++/13.2.0/bits/stl_bvector.h:
 
@@ -706,7 +968,15 @@ C:/MinGW/include/c++/13.2.0/bits/concept_check.h:
 
 C:/MinGW/include/c++/13.2.0/bits/allocated_ptr.h:
 
+C:/MinGW/x86_64-w64-mingw32/include/malloc.h:
+
+C:/MinGW/include/c++/13.2.0/bits/align.h:
+
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/avx512vbmiintrin.h:
+
 C:/MinGW/include/c++/13.2.0/cstdlib:
+
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/amxbf16intrin.h:
 
 C:/MinGW/include/c++/13.2.0/cstdint:
 
@@ -716,37 +986,41 @@ C:/MinGW/include/c++/13.2.0/bits/range_access.h:
 
 C:/MinGW/include/c++/13.2.0/bits/locale_facets.tcc:
 
-C:/MinGW/x86_64-w64-mingw32/include/crtdefs.h:
-
 C:/MinGW/include/c++/13.2.0/tr1/legendre_function.tcc:
 
 C:/MinGW/include/c++/13.2.0/bits/cxxabi_forced.h:
+
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/avx512ifmaintrin.h:
 
 C:/MinGW/include/c++/13.2.0/bits/parse_numbers.h:
 
 C:/MinGW/include/c++/13.2.0/bits/char_traits.h:
 
-C:/MinGW/include/c++/13.2.0/cstring:
-
 C:/MinGW/include/c++/13.2.0/bits/codecvt.h:
+
+C:/opencv_mingw/include/opencv2/imgproc/segmentation.hpp:
+
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/avx512vp2intersectintrin.h:
 
 C:/MinGW/include/c++/13.2.0/bits/localefwd.h:
 
 C:/MinGW/include/c++/13.2.0/functional:
 
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/prfchiintrin.h:
+
 C:/MinGW/include/c++/13.2.0/new:
 
 C:/MinGW/include/c++/13.2.0/x86_64-w64-mingw32/bits/error_constants.h:
+
+C:/MinGW/include/c++/13.2.0/bits/stl_iterator_base_funcs.h:
+
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/avx5124vnniwintrin.h:
 
 C:/MinGW/include/c++/13.2.0/bits/atomic_base.h:
 
 C:/MinGW/include/c++/13.2.0/bits/shared_ptr_atomic.h:
 
 C:/MinGW/include/c++/13.2.0/bits/locale_facets_nonio.h:
-
-C:/opencv_mingw/include/opencv2/dnn/utils/inference_engine.hpp:
-
-C:/MinGW/x86_64-w64-mingw32/include/stdio.h:
 
 C:/MinGW/include/c++/13.2.0/bits/atomic_lockfree_defines.h:
 
@@ -760,11 +1034,13 @@ C:/MinGW/include/c++/13.2.0/bits/stl_deque.h:
 
 C:/MinGW/include/c++/13.2.0/tr1/bessel_function.tcc:
 
+C:/MinGW/x86_64-w64-mingw32/include/string.h:
+
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/bmi2intrin.h:
+
 C:/MinGW/include/c++/13.2.0/bits/hash_bytes.h:
 
 C:/MinGW/include/c++/13.2.0/bits/exception_ptr.h:
-
-C:/MinGW/include/c++/13.2.0/bits/alloc_traits.h:
 
 C:/opencv_mingw/include/opencv2/flann/random.h:
 
@@ -772,13 +1048,31 @@ C:/MinGW/include/c++/13.2.0/bits/invoke.h:
 
 C:/MinGW/include/c++/13.2.0/backward/auto_ptr.h:
 
+C:/opencv_mingw/include/opencv2/flann/params.h:
+
+C:/MinGW/x86_64-w64-mingw32/include/time.h:
+
+C:/MinGW/include/c++/13.2.0/ext/concurrence.h:
+
 C:/MinGW/include/c++/13.2.0/bits/hashtable.h:
+
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/shaintrin.h:
 
 C:/MinGW/include/c++/13.2.0/x86_64-w64-mingw32/bits/os_defines.h:
 
 C:/opencv_mingw/include/opencv2/flann.hpp:
 
 C:/MinGW/include/c++/13.2.0/bits/ios_base.h:
+
+C:/MinGW/x86_64-w64-mingw32/include/float.h:
+
+C:/MinGW/include/c++/13.2.0/bits/list.tcc:
+
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/syslimits.h:
+
+C:/MinGW/include/c++/13.2.0/bits/erase_if.h:
+
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/avx512vlbwintrin.h:
 
 C:/MinGW/include/c++/13.2.0/chrono:
 
@@ -794,11 +1088,17 @@ C:/MinGW/include/c++/13.2.0/bits/ostream.tcc:
 
 C:/MinGW/include/c++/13.2.0/bits/stl_algobase.h:
 
+C:/MinGW/include/c++/13.2.0/bits/alloc_traits.h:
+
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/avxvnniint8intrin.h:
+
 C:/MinGW/include/c++/13.2.0/bits/shared_ptr_base.h:
 
 C:/MinGW/include/c++/13.2.0/x86_64-w64-mingw32/bits/atomic_word.h:
 
 C:/MinGW/include/c++/13.2.0/x86_64-w64-mingw32/bits/ctype_inline.h:
+
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/avx512bf16intrin.h:
 
 C:/opencv_mingw/include/opencv2/core/cvstd_wrapper.hpp:
 
@@ -816,11 +1116,13 @@ C:/MinGW/include/c++/13.2.0/x86_64-w64-mingw32/bits/c++allocator.h:
 
 C:/MinGW/x86_64-w64-mingw32/include/swprintf.inl:
 
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/avx512dqintrin.h:
+
 C:/MinGW/include/c++/13.2.0/x86_64-w64-mingw32/bits/gthr.h:
 
-C:/opencv_mingw/include/opencv2/core.hpp:
+C:/MinGW/x86_64-w64-mingw32/include/process.h:
 
-C:/MinGW/x86_64-w64-mingw32/include/sys/types.h:
+C:/MinGW/include/c++/13.2.0/bits/memoryfwd.h:
 
 C:/MinGW/include/c++/13.2.0/cstddef:
 
@@ -836,31 +1138,29 @@ C:/MinGW/include/c++/13.2.0/bits/functexcept.h:
 
 C:/MinGW/include/c++/13.2.0/bits/stringfwd.h:
 
-C:/opencv_mingw/include/opencv2/core/base.hpp:
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/waitpkgintrin.h:
+
+C:/MinGW/include/c++/13.2.0/initializer_list:
+
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/keylockerintrin.h:
+
+C:/Program\ Files/Webots/include/controller/c/webots/camera.h:
 
 C:/MinGW/include/c++/13.2.0/bits/node_handle.h:
 
-C:/MinGW/include/c++/13.2.0/bits/stl_queue.h:
+C:/MinGW/x86_64-w64-mingw32/include/sec_api/string_s.h:
 
-C:/MinGW/include/c++/13.2.0/bits/postypes.h:
+C:/MinGW/include/c++/13.2.0/ext/atomicity.h:
 
-C:/opencv_mingw/include/opencv2/dnn/version.hpp:
-
-C:/MinGW/x86_64-w64-mingw32/include/sdks/_mingw_ddk.h:
+C:/Program\ Files/Webots/include/controller/c/webots/types.h:
 
 C:/MinGW/include/c++/13.2.0/mutex:
 
-C:/MinGW/include/c++/13.2.0/bits/specfun.h:
-
-C:/MinGW/include/c++/13.2.0/bits/cpp_type_traits.h:
-
-C:/MinGW/include/c++/13.2.0/ext/numeric_traits.h:
-
 C:/MinGW/include/c++/13.2.0/ext/string_conversions.h:
 
-C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/xmmintrin.h:
-
 C:/opencv_mingw/include/opencv2/core/cvstd.inl.hpp:
+
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/clflushoptintrin.h:
 
 C:/MinGW/include/c++/13.2.0/iomanip:
 
@@ -870,15 +1170,25 @@ C:/MinGW/include/c++/13.2.0/iosfwd:
 
 C:/MinGW/include/c++/13.2.0/iostream:
 
+C:/MinGW/x86_64-w64-mingw32/include/stdint.h:
+
+C:/MinGW/include/c++/13.2.0/bits/stl_tempbuf.h:
+
+C:/MinGW/include/c++/13.2.0/limits:
+
 C:/MinGW/include/c++/13.2.0/list:
 
 C:/opencv_mingw/include/opencv2/flann/general.h:
 
 C:/MinGW/include/c++/13.2.0/utility:
 
-C:/MinGW/include/c++/13.2.0/locale:
+C:/opencv_mingw/include/opencv2/core/cuda_types.hpp:
 
-C:/MinGW/x86_64-w64-mingw32/include/stddef.h:
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/avx5124fmapsintrin.h:
+
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/avxneconvertintrin.h:
+
+C:/MinGW/include/c++/13.2.0/locale:
 
 C:/MinGW/include/c++/13.2.0/map:
 
@@ -892,7 +1202,17 @@ C:/MinGW/include/c++/13.2.0/pstl/glue_algorithm_defs.h:
 
 C:/MinGW/include/c++/13.2.0/queue:
 
+C:/opencv_mingw/include/opencv2/core/affine.hpp:
+
+C:/MinGW/x86_64-w64-mingw32/include/wctype.h:
+
+C:/MinGW/include/c++/13.2.0/bits/stl_iterator.h:
+
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/immintrin.h:
+
 C:/opencv_mingw/include/opencv2/features2d.hpp:
+
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/xtestintrin.h:
 
 C:/MinGW/include/c++/13.2.0/ratio:
 
@@ -904,9 +1224,15 @@ C:/MinGW/include/c++/13.2.0/x86_64-w64-mingw32/bits/cpu_defines.h:
 
 C:/MinGW/include/c++/13.2.0/tuple:
 
+C:/opencv_mingw/include/opencv2/stitching/detail/warpers.hpp:
+
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/fmaintrin.h:
+
 C:/MinGW/include/c++/13.2.0/bits/std_mutex.h:
 
 C:/MinGW/include/c++/13.2.0/sstream:
+
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/avx512bwintrin.h:
 
 C:/MinGW/include/c++/13.2.0/bits/std_function.h:
 
@@ -922,7 +1248,13 @@ C:/opencv_mingw/include/opencv2/flann/heap.h:
 
 C:/MinGW/include/c++/13.2.0/system_error:
 
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/pmmintrin.h:
+
 C:/MinGW/include/c++/13.2.0/tr1/ell_integral.tcc:
+
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/gfniintrin.h:
+
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/avx512cdintrin.h:
 
 C:/opencv_mingw/include/opencv2/objdetect/charuco_detector.hpp:
 
@@ -932,9 +1264,13 @@ C:/MinGW/include/c++/13.2.0/tr1/exp_integral.tcc:
 
 C:/MinGW/include/c++/13.2.0/tr1/hypergeometric.tcc:
 
+C:/Program\ Files/Webots/include/controller/c/webots/camera_recognition_object.h:
+
 C:/MinGW/include/c++/13.2.0/bits/exception_defines.h:
 
 C:/MinGW/include/c++/13.2.0/tr1/modified_bessel_func.tcc:
+
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/avx512erintrin.h:
 
 C:/MinGW/include/c++/13.2.0/deque:
 
@@ -944,17 +1280,15 @@ C:/MinGW/include/c++/13.2.0/typeinfo:
 
 C:/MinGW/include/c++/13.2.0/x86_64-w64-mingw32/bits/gthr-default.h:
 
-C:/MinGW/include/c++/13.2.0/tr1/riemann_zeta.tcc:
-
-C:/MinGW/x86_64-w64-mingw32/include/errno.h:
-
 C:/MinGW/include/c++/13.2.0/tr1/special_function_util.h:
-
-C:/MinGW/include/c++/13.2.0/bits/chrono.h:
 
 C:/opencv_mingw/include/opencv2/calib3d.hpp:
 
+C:/MinGW/include/c++/13.2.0/bits/chrono.h:
+
 C:/MinGW/include/c++/13.2.0/unordered_map:
+
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/vaesintrin.h:
 
 C:/MinGW/include/c++/13.2.0/vector:
 
@@ -962,126 +1296,92 @@ C:/MinGW/include/c++/13.2.0/bits/memory_resource.h:
 
 C:/MinGW/include/c++/13.2.0/x86_64-w64-mingw32/bits/c++config.h:
 
+C:/MinGW/include/c++/13.2.0/tr1/riemann_zeta.tcc:
+
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/avx512bitalgintrin.h:
+
 C:/MinGW/include/c++/13.2.0/x86_64-w64-mingw32/bits/c++locale.h:
 
 C:/MinGW/include/c++/13.2.0/x86_64-w64-mingw32/bits/ctype_base.h:
 
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/avx512vpopcntdqintrin.h:
+
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/amxtileintrin.h:
+
 C:/MinGW/include/c++/13.2.0/x86_64-w64-mingw32/bits/messages_members.h:
-
-C:/opencv_mingw/include/opencv2/core/saturate.hpp:
-
-C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/mm_malloc.h:
 
 C:/MinGW/x86_64-w64-mingw32/include/pthread_time.h:
 
 C:/MinGW/include/c++/13.2.0/x86_64-w64-mingw32/bits/time_members.h:
 
-C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/emmintrin.h:
-
-C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/float.h:
-
-C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/mmintrin.h:
-
-C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/stddef.h:
-
-C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/stdint.h:
-
-C:/MinGW/include/c++/13.2.0/bits/erase_if.h:
-
-C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/syslimits.h:
-
-C:/MinGW/include/c++/13.2.0/bits/requires_hosted.h:
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/amxcomplexintrin.h:
 
 C:/MinGW/x86_64-w64-mingw32/include/_mingw.h:
 
-C:/MinGW/x86_64-w64-mingw32/include/_mingw_mac.h:
+C:/MinGW/include/c++/13.2.0/bits/requires_hosted.h:
 
-C:/MinGW/x86_64-w64-mingw32/include/_mingw_off_t.h:
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/amxint8intrin.h:
 
-C:/MinGW/x86_64-w64-mingw32/include/_mingw_secapi.h:
+C:/opencv_mingw/include/opencv2/imgproc.hpp:
 
-C:/MinGW/x86_64-w64-mingw32/include/_mingw_stdarg.h:
+C:/opencv_mingw/include/opencv2/flann/config.h:
 
-C:/MinGW/x86_64-w64-mingw32/include/_timeval.h:
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/avx2intrin.h:
 
-C:/MinGW/x86_64-w64-mingw32/include/assert.h:
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/tbmintrin.h:
 
-C:/MinGW/x86_64-w64-mingw32/include/corecrt_startup.h:
+C:/MinGW/include/c++/13.2.0/bits/specfun.h:
 
-C:/MinGW/include/c++/13.2.0/bits/shared_ptr.h:
+C:/MinGW/include/c++/13.2.0/bits/cpp_type_traits.h:
 
-C:/MinGW/x86_64-w64-mingw32/include/ctype.h:
+C:/MinGW/include/c++/13.2.0/ext/numeric_traits.h:
 
-C:/MinGW/include/c++/13.2.0/bits/list.tcc:
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/avx512vbmi2intrin.h:
 
-C:/MinGW/x86_64-w64-mingw32/include/float.h:
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/avx512vbmi2vlintrin.h:
 
-C:/opencv_mingw/include/opencv2/core/optim.hpp:
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/avx512vbmivlintrin.h:
 
-C:/MinGW/x86_64-w64-mingw32/include/pthread.h:
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/lwpintrin.h:
 
-C:/MinGW/include/c++/13.2.0/bits/quoted_string.h:
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/avx512vldqintrin.h:
 
-C:/MinGW/x86_64-w64-mingw32/include/limits.h:
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/avx512vnniintrin.h:
 
-C:/opencv_mingw/include/opencv2/opencv.hpp:
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/avx512vnnivlintrin.h:
 
-C:/MinGW/x86_64-w64-mingw32/include/locale.h:
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/avx512vpopcntdqvlintrin.h:
 
-C:/MinGW/x86_64-w64-mingw32/include/sec_api/stdlib_s.h:
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/avxifmaintrin.h:
 
-C:/MinGW/include/c++/13.2.0/bits/align.h:
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/cldemoteintrin.h:
 
-C:/MinGW/x86_64-w64-mingw32/include/malloc.h:
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/avxintrin.h:
 
-C:/MinGW/x86_64-w64-mingw32/include/math.h:
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/bmiintrin.h:
 
-C:/MinGW/include/c++/13.2.0/bits/memoryfwd.h:
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/serializeintrin.h:
 
-C:/MinGW/x86_64-w64-mingw32/include/process.h:
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/cetintrin.h:
 
-C:/MinGW/x86_64-w64-mingw32/include/pthread_signal.h:
+C:/MinGW/include/c++/13.2.0/cstring:
 
-C:/MinGW/include/c++/13.2.0/ext/atomicity.h:
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/clwbintrin.h:
 
-C:/MinGW/x86_64-w64-mingw32/include/sec_api/string_s.h:
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/emmintrin.h:
 
-C:/opencv_mingw/include/opencv2/opencv_modules.hpp:
+C:/MinGW/include/c++/13.2.0/bits/stl_queue.h:
 
-C:/opencv_mingw/include/opencv2/flann/lsh_index.h:
+C:/MinGW/include/c++/13.2.0/bits/postypes.h:
 
-C:/MinGW/x86_64-w64-mingw32/include/corecrt_wstdlib.h:
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/enqcmdintrin.h:
 
-C:/MinGW/x86_64-w64-mingw32/include/sec_api/sys/timeb_s.h:
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/popcntintrin.h:
 
-C:/MinGW/x86_64-w64-mingw32/include/signal.h:
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/f16cintrin.h:
 
-C:/MinGW/include/c++/13.2.0/bits/basic_ios.h:
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/float.h:
 
-C:/MinGW/x86_64-w64-mingw32/include/stdarg.h:
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/hresetintrin.h:
 
-C:/MinGW/include/c++/13.2.0/bits/stl_tempbuf.h:
-
-C:/MinGW/include/c++/13.2.0/limits:
-
-C:/MinGW/x86_64-w64-mingw32/include/stdint.h:
-
-C:/MinGW/x86_64-w64-mingw32/include/stdlib.h:
-
-C:/opencv_mingw/include/opencv2/flann/params.h:
-
-C:/MinGW/include/c++/13.2.0/ext/concurrence.h:
-
-C:/MinGW/x86_64-w64-mingw32/include/time.h:
-
-C:/MinGW/x86_64-w64-mingw32/include/wchar.h:
-
-C:/MinGW/include/c++/13.2.0/bits/stl_iterator.h:
-
-C:/MinGW/x86_64-w64-mingw32/include/wctype.h:
-
-C:/opencv_mingw/include/opencv2/core/affine.hpp:
-
-C:/MinGW/include/c++/13.2.0/bits/stl_vector.h:
-
-C:/opencv_mingw/include/opencv2/core/async.hpp:
+C:/MinGW/lib/gcc/x86_64-w64-mingw32/13.2.0/include/ia32intrin.h:
