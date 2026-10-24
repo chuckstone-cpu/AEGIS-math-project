@@ -3,54 +3,63 @@ project(ApexEngine LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-# ============================================================================
-# 1. AUTO-DETECT OPENCV ON WINDOWS IF OpenCV_DIR IS NOT SET
-# ============================================================================
-if(NOT DEFINED OpenCV_DIR AND NOT DEFINED ENV{OpenCV_DIR})
-    # Search common Windows OpenCV installation directories
-    file(GLOB OPENCV_SEARCH_PATHS
-        "C:/opencv_mingw/x64/mingw/staticlib"
-        "C:/opencv_mingw"
-        "C:/opencv/build"
-        "C:/opencv/build/x64/vc*/lib"
-        "C:/opencv/build/x64/mingw/lib"
-        "C:/tools/opencv/build"
-        "C:/Program Files/opencv/build"
-        "C:/vcpkg/installed/x64-windows/share/opencv*"
-        "C:/msys64/mingw64/lib/cmake/opencv4"
-        "$ENV{USERPROFILE}/opencv/build"
-        "$ENV{USERPROFILE}/Downloads/opencv/build"
-    )
-    find_path(AUTO_OPENCV_DIR
-        NAMES OpenCVConfig.cmake opencv-config.cmake
-        PATHS ${OPENCV_SEARCH_PATHS}
-        PATH_SUFFIXES
-            x64/mingw/staticlib
-            x64/mingw/lib
-            x64/vc17/lib
-            x64/vc16/lib
-            x64/vc15/lib
-            lib/cmake/opencv4
-            share/opencv4
-            ""
-    )
-    if(AUTO_OPENCV_DIR)
-        set(OpenCV_DIR "${AUTO_OPENCV_DIR}" CACHE PATH "Auto-detected OpenCV directory" FORCE)
-        message(STATUS "[ApexEngine] Auto-detected OpenCV_DIR: ${OpenCV_DIR}")
-    endif()
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release)
 endif()
 
-find_package(OpenCV REQUIRED)
-message(STATUS "[ApexEngine] Found OpenCV ${OpenCV_VERSION} at: ${OpenCV_DIR}")
+option(APEX_NO_GUI "Build without an OpenCV window (record/snap only)" OFF)
 
 # ============================================================================
-# 2. FIND OPENMP
+# 1. MATHS ENGINE (header-only, no external maths library) + its test suite
 # ============================================================================
+add_library(apex_math INTERFACE)
+target_include_directories(apex_math INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
+add_executable(test_math tests/test_math.cpp)
+target_link_libraries(test_math PRIVATE apex_math)
+enable_testing()
+add_test(NAME apex_math_tests COMMAND test_math)
+
+# ============================================================================
+# 2. OPENCV (UI, video I/O and drawing only) - auto-detect common Windows paths
+# ============================================================================
+if(NOT DEFINED OpenCV_DIR AND NOT DEFINED ENV{OpenCV_DIR})
+    find_path(AUTO_OPENCV_DIR
+        NAMES OpenCVConfig.cmake opencv-config.cmake
+        PATHS
+            "C:/opencv_mingw" "C:/opencv/build" "C:/tools/opencv/build"
+            "C:/Program Files/opencv/build" "C:/msys64/ucrt64" "C:/msys64/mingw64"
+            "$ENV{USERPROFILE}/opencv/build"
+        PATH_SUFFIXES
+            x64/mingw/staticlib x64/mingw/lib x64/vc17/lib x64/vc16/lib
+            lib/cmake/opencv4 share/opencv4 ""
+    )
+    if(AUTO_OPENCV_DIR)
+        set(OpenCV_DIR "${AUTO_OPENCV_DIR}" CACHE PATH "Auto-detected OpenCV" FORCE)
+    endif()
+endif()
+find_package(OpenCV REQUIRED)
+message(STATUS "[ApexEngine] OpenCV ${OpenCV_VERSION} at ${OpenCV_DIR}")
 find_package(OpenMP)
 
+add_executable(apex_engine apex_engine.cpp)
+target_include_directories(apex_engine PRIVATE ${OpenCV_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(apex_engine PRIVATE apex_math ${OpenCV_LIBS})
+if(OpenMP_CXX_FOUND)
+    target_link_libraries(apex_engine PRIVATE OpenMP::OpenMP_CXX)
+endif()
+if(APEX_NO_GUI)
+    target_compile_definitions(apex_engine PRIVATE APEX_NO_GUI)
+endif()
+if(MSVC)
+    target_compile_options(apex_engine PRIVATE /O2 /arch:AVX2)
+else()
+    # no -ffast-math: the solvers rely on IEEE isfinite/NaN checks
+    target_compile_options(apex_engine PRIVATE -O3 -march=native)
+endif()
+
 # ============================================================================
-# 3. LOCATE WEBOTS INSTALLATION (Default: C:/Program Files/Webots)
+# 3. WEBOTS (optional): controller + car library
 # ============================================================================
 if(DEFINED ENV{WEBOTS_HOME})
     file(TO_CMAKE_PATH "$ENV{WEBOTS_HOME}" WEBOTS_HOME)
@@ -58,76 +67,40 @@ elseif(EXISTS "C:/Program Files/Webots")
     set(WEBOTS_HOME "C:/Program Files/Webots")
 endif()
 
-add_executable(apex_engine apex_engine.cpp)
-
-target_include_directories(apex_engine PRIVATE ${OpenCV_INCLUDE_DIRS})
-target_link_libraries(apex_engine PRIVATE ${OpenCV_LIBS})
-
-if(OpenMP_CXX_FOUND)
-    target_link_libraries(apex_engine PRIVATE OpenMP::OpenMP_CXX)
-endif()
-
-if(MSVC)
-    target_compile_options(apex_engine PRIVATE /O2 /arch:AVX2 /fp:fast)
-else()
-    target_compile_options(apex_engine PRIVATE -O3 -march=native -ffast-math)
-endif()
-
-# ============================================================================
-# 4. LINK WEBOTS CONTROLLER & DRIVER LIBRARIES
-# ============================================================================
 if(DEFINED WEBOTS_HOME AND EXISTS "${WEBOTS_HOME}/include/controller/c")
-    message(STATUS "[ApexEngine] Found Webots at: ${WEBOTS_HOME}")
+    message(STATUS "[ApexEngine] Webots at ${WEBOTS_HOME}")
     target_compile_definitions(apex_engine PRIVATE USE_WEBOTS)
     target_include_directories(apex_engine PRIVATE "${WEBOTS_HOME}/include/controller/c")
-
-    find_library(WEBOTS_CONTROLLER_LIB
-        NAMES Controller libController
-        PATHS "${WEBOTS_HOME}/lib/controller"
-        NO_DEFAULT_PATH
-    )
-    find_library(WEBOTS_DRIVER_LIB
-        NAMES driver libdriver vehicle libvehicle
-        PATHS "${WEBOTS_HOME}/lib/controller"
-        NO_DEFAULT_PATH
-    )
-
+    find_library(WEBOTS_CONTROLLER_LIB NAMES Controller libController
+                 PATHS "${WEBOTS_HOME}/lib/controller" NO_DEFAULT_PATH)
+    find_library(WEBOTS_DRIVER_LIB NAMES driver libdriver car libcar
+                 PATHS "${WEBOTS_HOME}/lib/controller" NO_DEFAULT_PATH)
     if(WEBOTS_CONTROLLER_LIB AND WEBOTS_DRIVER_LIB)
         target_link_libraries(apex_engine PRIVATE "${WEBOTS_CONTROLLER_LIB}" "${WEBOTS_DRIVER_LIB}")
     else()
         target_link_directories(apex_engine PRIVATE "${WEBOTS_HOME}/lib/controller")
         target_link_libraries(apex_engine PRIVATE Controller driver)
     endif()
-
-    # Copy Webots DLLs next to apex_engine.exe
     if(WIN32)
         file(GLOB WEBOTS_DLLS "${WEBOTS_HOME}/lib/controller/*.dll")
         foreach(DLL_FILE ${WEBOTS_DLLS})
             add_custom_command(TARGET apex_engine POST_BUILD
-                COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                "${DLL_FILE}"
-                "$<TARGET_FILE_DIR:apex_engine>"
-            )
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different "${DLL_FILE}"
+                        "$<TARGET_FILE_DIR:apex_engine>")
         endforeach()
     endif()
 else()
-    message(WARNING "[ApexEngine] Webots not found! Building in Video-Only mode.")
+    message(WARNING "[ApexEngine] Webots not found: building video-only mode.")
 endif()
 
-# Copy OpenCV DLLs next to apex_engine.exe so it runs without PATH issues
+# Copy OpenCV DLLs next to apex_engine.exe so it runs without PATH changes
 if(WIN32 AND DEFINED OpenCV_DIR)
-    get_filename_component(OPENCV_LIB_PARENT "${OpenCV_DIR}" DIRECTORY)
     file(GLOB OPENCV_DLLS
         "${OpenCV_DIR}/../bin/*.dll"
-        "${OPENCV_LIB_PARENT}/bin/*.dll"
-        "C:/opencv/build/x64/vc*/bin/*.dll"
-        "C:/opencv_mingw/x64/mingw/bin/*.dll"
-    )
+        "C:/opencv_mingw/x64/mingw/bin/*.dll")
     foreach(CV_DLL ${OPENCV_DLLS})
         add_custom_command(TARGET apex_engine POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${CV_DLL}"
-            "$<TARGET_FILE_DIR:apex_engine>"
-        )
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CV_DLL}"
+                    "$<TARGET_FILE_DIR:apex_engine>")
     endforeach()
 endif()
