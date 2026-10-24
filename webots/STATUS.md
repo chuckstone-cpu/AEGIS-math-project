@@ -8,7 +8,7 @@
   change. Webots' own asset downloader stalls on this network.
 - World generator, scenarios, supervisor (movie, stop & go, moving actors), analyser and video
   composer are all working.
-- Tests: 39 checks, all passing (`build_wb/test_math.exe`).
+- Tests: 37 checks, all passing (`build_wb/test_math.exe`).
 - Best clean-lap result (calib4, no scenarios): constant 29 km/h, steering variation 2.3 rad/min,
   ADMM converged on 98% of frames.
 - Demo 5 (all scenarios): the barrel, lead car, cut-in and stalled car are all handled. The car
