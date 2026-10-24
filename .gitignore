@@ -1,3 +1,10 @@
 
 Simulation/
 
+build_wb/
+webots/controllers/*/*.exe
+webots/controllers/*/*.dll
+webots/controllers/apex_engine/platforms/
+webots/output/
+webots/runs/*/*.csv
+webots/controllers/apex_engine/qt.conf

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(ApexEngine LANGUAGES CXX)
+project(ApexEngine LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -81,14 +81,24 @@ if(DEFINED WEBOTS_HOME AND EXISTS "${WEBOTS_HOME}/include/controller/c")
         target_link_directories(apex_engine PRIVATE "${WEBOTS_HOME}/lib/controller")
         target_link_libraries(apex_engine PRIVATE Controller driver)
     endif()
-    if(WIN32)
-        file(GLOB WEBOTS_DLLS "${WEBOTS_HOME}/lib/controller/*.dll")
-        foreach(DLL_FILE ${WEBOTS_DLLS})
-            add_custom_command(TARGET apex_engine POST_BUILD
-                COMMAND ${CMAKE_COMMAND} -E copy_if_different "${DLL_FILE}"
-                        "$<TARGET_FILE_DIR:apex_engine>")
-        endforeach()
-    endif()
+    # Deploy into the Webots project: webots/controllers/apex_engine/
+    get_filename_component(_cxx_bin "${CMAKE_CXX_COMPILER}" DIRECTORY)
+    set(_qt_plugins "${_cxx_bin}/../share/qt6/plugins")
+    add_custom_command(TARGET apex_engine POST_BUILD
+        COMMAND ${CMAKE_COMMAND}
+            -DEXE=$<TARGET_FILE:apex_engine>
+            "-DDEST=${CMAKE_CURRENT_SOURCE_DIR}/webots/controllers/apex_engine"
+            "-DSEARCH_DIRS=${_cxx_bin};${OpenCV_DIR}/../bin"
+            "-DQT_PLUGINS=${_qt_plugins}"
+            -Wno-dev -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/deploy_controller.cmake"
+        VERBATIM)
+
+    # Scenario supervisor (plain C, Webots Supervisor API)
+    add_executable(scenario_supervisor webots/controllers/scenario_supervisor/scenario_supervisor.c)
+    target_include_directories(scenario_supervisor PRIVATE "${WEBOTS_HOME}/include/controller/c")
+    target_link_libraries(scenario_supervisor PRIVATE "${WEBOTS_CONTROLLER_LIB}")
+    set_target_properties(scenario_supervisor PROPERTIES RUNTIME_OUTPUT_DIRECTORY
+        "${CMAKE_CURRENT_SOURCE_DIR}/webots/controllers/scenario_supervisor")
 else()
     message(WARNING "[ApexEngine] Webots not found: building video-only mode.")
 endif()

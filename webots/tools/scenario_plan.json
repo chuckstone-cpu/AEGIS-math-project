@@ -1,0 +1,16 @@
+{
+  "_doc": "Arc lengths s [m] along webots/worlds/ref_path.csv (the ego's recorded lane-centre path, one ~760 m lap). Offsets named *_offset are metres to the RIGHT of the path.",
+  "crosswalk": [-61.46, 45.07],
+  "stalled_car_s": 590,
+  "lead_car_s": [260, 360],
+  "lead_speed_kmh": 12,
+  "cut_in_s": [445, 515],
+  "cut_in_speed_kmh": 20,
+  "lane_width": 5.4,
+  "cones_s": 650,
+  "parked_s": [95, 104, 113, 300, 309],
+  "parked_offset": 6.3,
+  "curb_offset": 10.5,
+  "bus_stops_s": [60, 540],
+  "fountain": null
+}

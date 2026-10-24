@@ -50,6 +50,7 @@ struct Data {
   double fps = 0.0;
   const Mat *camera = nullptr; // 800x600 BGR
   const apex::LaneResult *lane = nullptr;
+  const apex::CameraModel *cam = nullptr;
   float steer = 0.0f, raw_steer = 0.0f;
   float speed_kmh = 0.0f, cmd_kmh = 0.0f, limit_kmh = 0.0f;
   float brake = 0.0f;
@@ -137,23 +138,28 @@ inline void draw_camera(Mat &c, const Rect &r, const Data &d) {
     for (const auto &p : L.center_pts)
       cv::circle(view, Point(p.x, p.y), 2, Scalar(200, 200, 200), cv::FILLED,
                  cv::LINE_AA);
-    if (L.fit.ok) {
-      // WLS quadratic lane centre and its +-2 sigma predictive band
-      std::vector<Point> mid, lo, hi;
-      const float hw = 0.5f * r.width;
-      for (int k = 0; k <= 24; ++k) {
-        const float t = k / 24.0f;
-        const int y = L.y_top + static_cast<int>(t * (L.y_bottom - L.y_top));
-        const float x = L.fit.eval(t);
-        const float s = 2.0f * std::sqrt(L.fit.predictive_variance(t) +
-                                         L.fit.sigma * L.fit.sigma);
-        mid.emplace_back(static_cast<int>(hw + x * hw), y);
-        lo.emplace_back(static_cast<int>(hw + (x - s) * hw), y);
-        hi.emplace_back(static_cast<int>(hw + (x + s) * hw), y);
+    if (L.fit.ok && d.cam) {
+      // metric WLS lane centre (+ lane borders) projected back into the image
+      std::vector<Point> mid, lb, rb;
+      const float x1 = std::min(L.fit_x_max, 40.0f);
+      for (float X = std::max(L.fit_x_min, 6.0f); X <= x1; X += 0.5f) {
+        const float Y = L.fit.eval(X / apex::kFitScale);
+        float u, v;
+        d.cam->to_image(X, Y, r.width, r.height, u, v);
+        mid.emplace_back(static_cast<int>(u), static_cast<int>(v));
+        d.cam->to_image(X, Y + 2.69f, r.width, r.height, u, v);
+        lb.emplace_back(static_cast<int>(u), static_cast<int>(v));
+        d.cam->to_image(X, Y - 2.69f, r.width, r.height, u, v);
+        rb.emplace_back(static_cast<int>(u), static_cast<int>(v));
       }
-      cv::polylines(view, lo, false, Scalar(140, 120, 40), 1, cv::LINE_AA);
-      cv::polylines(view, hi, false, Scalar(140, 120, 40), 1, cv::LINE_AA);
-      cv::polylines(view, mid, false, CYAN, 3, cv::LINE_AA);
+      if (mid.size() > 1) {
+        std::vector<Point> poly(lb);
+        poly.insert(poly.end(), rb.rbegin(), rb.rend());
+        Mat overlay = view.clone();
+        cv::fillPoly(overlay, std::vector<std::vector<Point>>{poly}, Scalar(160, 110, 20));
+        cv::addWeighted(overlay, 0.35, view, 0.65, 0, view);
+        cv::polylines(view, mid, false, CYAN, 3, cv::LINE_AA);
+      }
     }
     const Point hood(r.width / 2, r.height - 18);
     const Point tgt(L.target.x, L.target.y);
@@ -174,10 +180,12 @@ inline void draw_camera(Mat &c, const Rect &r, const Data &d) {
   cv::addWeighted(strip, 0.45, dark, 0.55, 0, strip);
   if (d.webots && d.lane) {
     txt(view,
-        "lane fit: " + std::to_string(d.lane->fit.used) + " pts, " +
-            std::to_string(d.lane->fit.rejected) + " Chebyshev-rejected" +
-            fmt(",  sigma %.3f", d.lane->fit.sigma) +
-            fmt(",  Kalman gain %.2f", d.lane->filter_gain),
+        "IPM lane fit: " + std::to_string(d.lane->fit.used) + " pts, " +
+            std::to_string(d.lane->fit.rejected) + " Chebyshev-rej" +
+            fmt(", sigma %.2f m", d.lane->fit.sigma) +
+            fmt(", gain %.2f", d.lane->filter_gain) +
+            fmt(", pursuit R %.0f m",
+                std::fabs(d.lane->curvature) > 1e-4f ? 1.0f / std::fabs(d.lane->curvature) : 9999.0f),
         Point(10, 22), 0.48, TEXT);
   } else {
     txt(view, "PDE-smoothed + rank-1 SVD background -> obstacle cue",
@@ -416,13 +424,34 @@ inline void draw_sensor_panel(Mat &c, const Rect &r, const Data &d) {
       float rr = d.lidar[i];
       if (!std::isfinite(rr) || rr <= 0.0f)
         continue;
-      const float a = -d.lidar_fov / 2 + d.lidar_fov * i / std::max(1, d.lidar_n - 1);
-      const int x = car.x + static_cast<int>(rr * std::sin(a) * px_per_m);
+      // range image runs left -> right; a > 0 is to the left
+      const float a = d.lidar_fov / 2 - d.lidar_fov * i / std::max(1, d.lidar_n - 1);
+      const int x = car.x - static_cast<int>(rr * std::sin(a) * px_per_m);
       const int y = car.y - static_cast<int>(rr * std::cos(a) * px_per_m);
       if (sr.contains(Point(x, y))) {
         const bool front = std::fabs(a) < d.lidar_fov * 0.04f;
         cv::circle(c, Point(x, y), 1, front ? RED : GREEN, cv::FILLED);
       }
+    }
+    // IPM lane marks and fitted centre in the same metric top view
+    // (lidar sits 2.13 m ahead of the camera)
+    if (d.lane) {
+      const float lx = -2.13f;
+      for (const auto &mk : d.lane->marks) {
+        const Point q(car.x - static_cast<int>(mk.Y * px_per_m),
+                      car.y - static_cast<int>((mk.X + lx) * px_per_m));
+        if (sr.contains(q))
+          cv::circle(c, q, 2, mk.type == 0 ? YELLOW : (mk.type == 3 ? MUTED : TEXT),
+                     cv::FILLED);
+      }
+      if (d.lane->fit.ok)
+        for (float X = 6.0f; X < 40.0f; X += 0.5f) {
+          const float Y = d.lane->fit.eval(X / apex::kFitScale);
+          const Point q(car.x - static_cast<int>(Y * px_per_m),
+                        car.y - static_cast<int>((X + lx) * px_per_m));
+          if (sr.contains(q))
+            cv::circle(c, q, 1, CYAN, cv::FILLED);
+        }
     }
     cv::rectangle(c, Rect(car.x - 4, car.y - 8, 8, 14), CYAN, cv::FILLED);
   } else if (d.svd_foreground && !d.svd_foreground->empty()) {

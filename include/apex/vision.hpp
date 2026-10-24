@@ -147,31 +147,91 @@ inline float power_iteration_svd(const float *__restrict A, int N, int M,
 }
 
 // ----------------------------------------------------------------------------
-// Lane tracking
+// Lane tracking in METRIC ground coordinates (inverse perspective mapping)
 //
-// Stage 1 (measurement): scan image rows and produce candidate lane-centre
-//   points. These colour rules are calibrated for the Webots city world:
-//   yellow centre line, dark asphalt, bright kerbs, white dashes.
-// Stage 2 (estimation): robust weighted least-squares quadratic
-//   x(t) = c0 + c1 t + c2 t^2  through the candidates (Chebyshev rejection).
-// Stage 3 (filtering): Gaussian tracker on the look-ahead point using the WLS
-//   predictive variance as the measurement noise.
-// Stage 4 (control): steering = atan(K * normalised lateral error), plus a
-//   steering-rate limit so the wheel can never snap between frames.
+// Pinhole camera, optical axis horizontal, height h above a flat road. A ground
+// point at forward distance X and lateral offset Y (left positive) projects to
+//      u = c_x - f Y / X ,     v = c_y + f h / X
+// so each image pixel below the horizon maps back to the road plane by
+//      X = f h / (v - c_y) ,   Y = -(u - c_x) X / f .
+//
+// Stage 1 (measurement): find yellow (centre double line) and white (lane
+//   divider / road edge) paint per image row, back-project to (X, Y).
+//   Every marking is a noisy measurement of the SAME lane-centre curve:
+//      yellow  at  +W/2  of the lane centre (W = lane width)
+//      divider at  -W/2,   road edge at  -3W/2
+//   White marks are associated by gating against the previous estimate.
+// Stage 2 (estimation): robust weighted least squares  Y_c(X) = c0 + c1 X + c2 X^2.
+//   One pixel of error moves Y by X / f metres, so Var(Y) ~ X^2 and the
+//   inverse-variance (Gauss-Markov optimal) weight is w ~ 1 / X^2.
+//   Chebyshev rejection removes mis-associated marks.
+// Stage 3 (filtering): Gaussian tracker on the look-ahead offset y(L_d), with
+//   the WLS predictive variance as measurement noise (random-walk model).
+// Stage 4 (control): pure pursuit. The circular arc from the rear axle
+//   through the look-ahead point (x_t, y_t) has curvature k = 2 y_t / D^2,
+//   D^2 = x_t^2 + y_t^2, so the steering angle is delta = atan(L k).
+//   A steering-rate limit keeps the wheel from snapping between frames.
 // ----------------------------------------------------------------------------
 struct Pt {
   int x, y;
 };
 
+struct GroundMark {
+  float X, Y; // metres, car camera frame (X forward, Y left)
+  int type;   // 0 yellow, 1 lane divider, 2 road edge, 3 unassociated white
+};
+
+struct CameraModel {
+  float f = 234.30f;       // focal length [camera px] = (w/2) / tan(fov/2)
+  float cx = 127.5f, cy = 63.5f;
+  int cam_w = 256, cam_h = 128;
+  float height = 1.80f;    // camera height above road [m]
+  float x_offset = 1.72f;  // camera ahead of the rear axle [m]
+
+  static CameraModel from_webots(int w, int h, float fov, float height, float x_off) {
+    CameraModel c;
+    c.cam_w = w;
+    c.cam_h = h;
+    c.f = 0.5f * w / std::tan(0.5f * fov);
+    c.cx = 0.5f * w - 0.5f;
+    c.cy = 0.5f * h - 0.5f;
+    c.height = height;
+    c.x_offset = x_off;
+    return c;
+  }
+  // image (in a view of size view_w x view_h) -> ground. false above horizon.
+  bool to_ground(float u_view, float v_view, int view_w, int view_h, float &X,
+                 float &Y) const {
+    const float u = (u_view + 0.5f) * cam_w / view_w - 0.5f;
+    const float v = (v_view + 0.5f) * cam_h / view_h - 0.5f;
+    const float dv = v - cy;
+    if (dv < 0.5f)
+      return false;
+    X = f * height / dv;
+    Y = -(u - cx) * X / f;
+    return true;
+  }
+  void to_image(float X, float Y, int view_w, int view_h, float &u_view,
+                float &v_view) const {
+    const float u = cx - f * Y / X, v = cy + f * height / X;
+    u_view = (u + 0.5f) * view_w / cam_w - 0.5f;
+    v_view = (v + 0.5f) * view_h / cam_h - 0.5f;
+  }
+};
+
 struct LaneResult {
-  std::vector<Pt> left_pts, right_pts, center_pts;
-  std::vector<float> center_w;
-  PolyFit fit;
-  int y_top = 0, y_bottom = 0;
-  Pt target{0, 0};
+  std::vector<Pt> left_pts, right_pts, center_pts; // image overlay
+  std::vector<GroundMark> marks;                   // metric measurements
+  std::vector<float> cx_m, cy_m;                   // centre candidates [m]
+  PolyFit fit;            // Y_c(t), t = X / kFitScale
+  float fit_x_min = 0.0f, fit_x_max = 0.0f;
+  Pt target{0, 0};        // look-ahead point in the view image
+  float lookahead_m = 10.0f;
+  float target_y_m = 0.0f;
+  float curvature = 0.0f; // pure-pursuit arc curvature [1/m]
   float measurement_var = 0.0f;
   float filter_gain = 0.0f;
-  float lateral_error = 0.0f; // normalised [-1, 1]
+  float lateral_error = 0.0f; // y at look-ahead [m]
   float raw_steer = 0.0f;
   float steering_rad = 0.0f;
   bool valid = false;
@@ -183,76 +243,81 @@ inline bool is_yellow_line(int r, int g, int b) {
 inline bool is_white_paint(int r, int g, int b) {
   return (r > 145 && g > 145 && b > 145 && std::abs(r - b) < 30);
 }
-inline bool is_road_asphalt(int r, int g, int b) {
-  const int mx = std::max({r, g, b}), mn = std::min({r, g, b});
-  const int lum = (r + g + b) / 3;
-  return (mx - mn) < 18 && lum >= 20 && lum <= 68;
-}
+
+constexpr float kFitScale = 20.0f; // fit in t = X / 20 for conditioning
 
 class LaneTracker {
 public:
-  float steer_gain = 0.85f;      // tuned on city.wbt
-  float max_steer = 0.38f;       // [rad]
-  float max_steer_rate = 0.9f;   // [rad/s]
-  float lookahead_t = 0.45f;     // fraction down the scan band
-  float deadband = 0.015f;
+  CameraModel cam;
+  float lane_width = 5.375f;    // Webots city: 21.5 m road, 4 lanes
+  float wheelbase = 2.995f;     // BMW X5 [m]
+  float max_steer = 0.45f;      // [rad]
+  float max_steer_rate = 0.9f;  // [rad/s]
+  float max_range = 40.0f;      // use marks up to 40 m
+  float min_lookahead = 8.0f, lookahead_gain = 0.9f; // L_d = max(8, 4 + 0.9 v)
 
   LaneTracker() {
     tracker.mean = 0.0f;
-    tracker.var = 0.05f;
-    tracker.Q = 3e-4f;
+    tracker.var = 0.25f;
+    tracker.Q = 2.5e-3f; // (5 cm)^2 per step random walk
   }
 
   LaneResult process(const uint8_t *__restrict bgr, int width, int height,
-                     float dt) {
+                     float dt, float speed_mps) {
     LaneResult res;
-    res.y_top = (height * 54) / 100;
-    res.y_bottom = (height * 90) / 100;
-    detect_candidates(bgr, width, res);
+    detect(bgr, width, height, res);
 
-    // ---- Stage 2: robust WLS fit in normalised coordinates ----
-    const int n = static_cast<int>(res.center_pts.size());
-    float t[kMaxFitPts], x[kMaxFitPts], w[kMaxFitPts];
-    const int m = std::min(n, kMaxFitPts);
-    const float half_w = 0.5f * width;
+    // ---- Stage 2: robust WLS fit of the centre line in metres ----
+    const int m = std::min(static_cast<int>(res.cx_m.size()), kMaxFitPts);
+    float t[kMaxFitPts], y[kMaxFitPts], w[kMaxFitPts];
+    res.fit_x_min = 1e9f;
+    res.fit_x_max = 0.0f;
     for (int i = 0; i < m; ++i) {
-      t[i] = static_cast<float>(res.center_pts[i].y - res.y_top) /
-             static_cast<float>(res.y_bottom - res.y_top);
-      x[i] = (res.center_pts[i].x - half_w) / half_w; // normalised offset
-      w[i] = res.center_w[i];
+      t[i] = res.cx_m[i] / kFitScale;
+      y[i] = res.cy_m[i];
+      w[i] = weight_[i] * 100.0f / (res.cx_m[i] * res.cx_m[i]); // ~ 1 / X^2
+      res.fit_x_min = std::min(res.fit_x_min, res.cx_m[i]);
+      res.fit_x_max = std::max(res.fit_x_max, res.cx_m[i]);
     }
-    res.fit = robust_wls_polyfit(t, x, w, m, 2, 2.5f, 0.01f);
+    res.fit = robust_wls_polyfit(t, y, w, m, 2, 2.5f, 0.08f);
+    if (res.fit.ok && res.fit.used >= 6) {
+      have_prev = true;
+      for (int k = 0; k < 3; ++k)
+        prev_c[k] = res.fit.c[k];
+    }
 
     // ---- Stage 3: Gaussian tracking of the look-ahead offset ----
+    const float Ld = std::max(min_lookahead, 4.0f + lookahead_gain * speed_mps);
+    res.lookahead_m = Ld;
     tracker.predict();
-    if (res.fit.ok) {
-      const float meas = clampf(res.fit.eval(lookahead_t), -0.8f, 0.8f);
-      // measurement variance = WLS predictive variance (+ floor for model error)
-      float R = res.fit.predictive_variance(lookahead_t) + 3e-4f;
-      R *= 1.0f + 0.5f * res.fit.rejected; // distrust frames with outliers
+    if (res.fit.ok && res.fit.used >= 6) {
+      // never extrapolate the parabola far beyond the data
+      const float x_eval = std::min(Ld, std::max(res.fit_x_max, min_lookahead));
+      const float tl = x_eval / kFitScale;
+      const float meas = clampf(res.fit.eval(tl), -6.0f, 6.0f);
+      float R = res.fit.predictive_variance(tl) + 0.01f;
+      R *= 1.0f + 0.25f * res.fit.rejected;
       tracker.update(meas, R);
       res.measurement_var = R;
       res.valid = true;
-    } else {
-      // no lane this frame: let the estimate relax slowly toward straight
-      tracker.mean *= 0.97f;
     }
     res.filter_gain = tracker.last_gain;
 
-    // ---- Stage 4: steering law + rate limit ----
-    float err = tracker.mean;
-    if (std::fabs(err) < deadband)
-      err = 0.0f;
-    res.lateral_error = err;
-    res.raw_steer = std::atan(steer_gain * err);
+    // ---- Stage 4: pure pursuit from the rear axle ----
+    const float xt = Ld + cam.x_offset, yt = tracker.mean;
+    const float D2 = xt * xt + yt * yt;
+    res.curvature = 2.0f * yt / D2;
+    res.target_y_m = yt;
+    res.lateral_error = yt;
+    // Webots convention: positive steering turns RIGHT (toward -Y)
+    res.raw_steer = clampf(-std::atan(wheelbase * res.curvature), -max_steer, max_steer);
     const float max_step = max_steer_rate * std::max(dt, 1e-3f);
     steer += clampf(res.raw_steer - steer, -max_step, max_step);
-    steer = clampf(steer, -max_steer, max_steer);
     res.steering_rad = steer;
 
-    const int ty = res.y_top +
-                   static_cast<int>(lookahead_t * (res.y_bottom - res.y_top));
-    res.target = Pt{static_cast<int>(half_w + tracker.mean * half_w), ty};
+    float u, v;
+    cam.to_image(Ld, yt, width, height, u, v);
+    res.target = Pt{static_cast<int>(u), static_cast<int>(v)};
     return res;
   }
 
@@ -261,106 +326,98 @@ public:
 private:
   GaussianTracker tracker;
   float steer = 0.0f;
+  bool have_prev = false;
+  double prev_c[3] = {0, 0, 0};
+  std::vector<float> weight_;
 
   static float clampf(float v, float lo, float hi) {
     return std::max(lo, std::min(hi, v));
   }
+  // predicted lane-centre offset at distance X from the previous fit
+  float predict_center(float X) const {
+    if (!have_prev)
+      return tracker.mean;
+    const double t = X / kFitScale;
+    return static_cast<float>(prev_c[0] + prev_c[1] * t + prev_c[2] * t * t);
+  }
+  void add_center(LaneResult &res, float X, float Yc, float wgt, int u, int v) {
+    res.cx_m.push_back(X);
+    res.cy_m.push_back(Yc);
+    weight_.push_back(wgt);
+    res.center_pts.push_back(Pt{u, v});
+  }
 
-  // Row-scan feature extraction (calibrated half-lane offset from the yellow
-  // centre line; kerb fallback; asphalt-band fallback).
-  void detect_candidates(const uint8_t *__restrict bgr, int width,
-                         LaneResult &res) const {
-    const int y_top = res.y_top, y_bottom = res.y_bottom;
-    for (int y = y_top; y < y_bottom; y += 3) {
-      const uint8_t *row = bgr + static_cast<size_t>(y) * width * 3;
-      const float y_norm =
-          static_cast<float>(y - y_top) / static_cast<float>(y_bottom - y_top);
-      const float half_lane = width * (0.23f + 0.11f * y_norm);
+  void detect(const uint8_t *__restrict bgr, int width, int height, LaneResult &res) {
+    weight_.clear();
+    const float half = 0.5f * lane_width;
+    // first row whose ground distance is within max_range
+    float u0, v_far;
+    cam.to_image(max_range, 0.0f, width, height, u0, v_far);
+    const int y_start = std::max(static_cast<int>(v_far) + 1, height / 2 + 2);
+    const int y_end = (height * 92) / 100;
 
-      // A. yellow centre line (reject crosswalks: many runs / wide span)
-      int ycount = 0, first = -1, last = -1, runs = 0;
+    for (int yv = y_start; yv < y_end; yv += 3) {
+      const uint8_t *row = bgr + static_cast<size_t>(yv) * width * 3;
+      // runs of yellow / white paint along the row
+      int ycount = 0, yfirst = -1, ylast = -1, yruns = 0;
       bool in_y = false;
-      for (int x = 4; x < (width * 75) / 100; x += 2) {
+      int w_start = -1;
+      std::vector<std::pair<int, int>> whites;
+      for (int x = 2; x < width - 2; x += 2) {
         const uint8_t *p = row + x * 3;
-        if (is_yellow_line(p[2], p[1], p[0])) {
+        const bool yel = is_yellow_line(p[2], p[1], p[0]);
+        const bool wht = !yel && is_white_paint(p[2], p[1], p[0]);
+        if (yel) {
           ++ycount;
-          if (first == -1)
-            first = x;
-          last = x;
+          if (yfirst < 0)
+            yfirst = x;
+          ylast = x;
           if (!in_y) {
-            ++runs;
+            ++yruns;
             in_y = true;
           }
         } else {
           in_y = false;
         }
-      }
-      bool has_left = false;
-      float x_L = 0.0f;
-      const int span = last - first;
-      if (ycount >= 2 && ycount <= 26 && runs <= 2 && span >= 0 &&
-          span < (width * 12) / 100) {
-        has_left = true;
-        x_L = 0.5f * (first + last);
-        res.left_pts.push_back(Pt{static_cast<int>(x_L), y});
-      }
-
-      // B. outer road edge: longest run of drivable surface (paint bridged)
-      const int start_x = has_left ? std::min(width - 20, static_cast<int>(x_L) + 30)
-                                   : (width * 20) / 100;
-      int best_s = -1, best_e = -1, cur_s = -1, cur_len = 0, max_len = 0;
-      for (int x = start_x; x < width - 4; x += 2) {
-        const uint8_t *p = row + x * 3;
-        bool road = is_road_asphalt(p[2], p[1], p[0]);
-        if (!road && (is_white_paint(p[2], p[1], p[0]) ||
-                      is_yellow_line(p[2], p[1], p[0]))) {
-          if (x + 18 < width) {
-            const uint8_t *q = row + (x + 18) * 3;
-            road = is_road_asphalt(q[2], q[1], q[0]);
-          }
+        if (wht && w_start < 0)
+          w_start = x;
+        if (!wht && w_start >= 0) {
+          whites.emplace_back(w_start, x - 2);
+          w_start = -1;
         }
-        if (road) {
-          if (cur_s == -1)
-            cur_s = x;
-          if (++cur_len > max_len) {
-            max_len = cur_len;
-            best_s = cur_s;
-            best_e = x;
-          }
+      }
+      float X, Y;
+      // A. yellow double line (reject crosswalk stripes: many runs / wide)
+      const int span = ylast - yfirst;
+      if (ycount >= 2 && yruns <= 2 && span >= 0 && span < (width * 12) / 100) {
+        const float u = 0.5f * (yfirst + ylast);
+        if (cam.to_ground(u, static_cast<float>(yv), width, height, X, Y) &&
+            X < max_range) {
+          res.marks.push_back(GroundMark{X, Y, 0});
+          res.left_pts.push_back(Pt{static_cast<int>(u), yv});
+          add_center(res, X, Y - half, 1.0f, static_cast<int>(u), yv);
+        }
+      }
+      // B. white paint, associated by gating against the predicted centre
+      for (const auto &r : whites) {
+        if (r.second - r.first > width / 6) // a crosswalk bar, not a line
+          continue;
+        const float u = 0.5f * (r.first + r.second);
+        if (!cam.to_ground(u, static_cast<float>(yv), width, height, X, Y) ||
+            X >= max_range)
+          continue;
+        const float d = Y - predict_center(X);
+        if (std::fabs(d + half) < 1.3f) {
+          res.marks.push_back(GroundMark{X, Y, 1});
+          res.right_pts.push_back(Pt{static_cast<int>(u), yv});
+          add_center(res, X, Y + half, 0.8f, static_cast<int>(u), yv);
+        } else if (std::fabs(d + 3.0f * half) < 1.6f) {
+          res.marks.push_back(GroundMark{X, Y, 2});
+          res.right_pts.push_back(Pt{static_cast<int>(u), yv});
+          add_center(res, X, Y + 3.0f * half, 0.5f, static_cast<int>(u), yv);
         } else {
-          cur_s = -1;
-          cur_len = 0;
+          res.marks.push_back(GroundMark{X, Y, 3});
         }
-      }
-      bool has_right = false;
-      float x_R = static_cast<float>(width - 1);
-      if (max_len >= 18 && best_e < width - 12) {
-        has_right = true;
-        x_R = static_cast<float>(best_e);
-        res.right_pts.push_back(Pt{static_cast<int>(x_R), y});
-      }
-
-      // C. lane-centre candidate with a confidence weight for the WLS fit
-      float x_mid = 0.5f * width, weight = 0.0f;
-      if (has_left) {
-        x_mid = x_L + half_lane;
-        if (has_right && (x_R - x_L) > width * 0.16f) {
-          const float hi = x_R - 0.85f * half_lane;
-          const float lo = x_L + 0.65f * half_lane;
-          x_mid = std::max(lo, std::min(x_mid, hi));
-        }
-        weight = 1.0f;
-      } else if (has_right) {
-        x_mid = x_R - half_lane;
-        weight = 0.6f;
-      } else if (max_len >= 20) {
-        x_mid = 0.5f * (best_s + best_e);
-        weight = 0.25f;
-      }
-      if (weight > 0.0f) {
-        x_mid = std::max(width * 0.10f, std::min(width * 0.90f, x_mid));
-        res.center_pts.push_back(Pt{static_cast<int>(x_mid), y});
-        res.center_w.push_back(weight);
       }
     }
   }

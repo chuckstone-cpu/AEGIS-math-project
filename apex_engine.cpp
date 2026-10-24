@@ -22,6 +22,7 @@
 #ifdef USE_WEBOTS
 #include <webots/camera.h>
 #include <webots/device.h>
+#include <webots/gps.h>
 #include <webots/lidar.h>
 #include <webots/robot.h>
 #include <webots/vehicle/driver.h>
@@ -29,6 +30,7 @@
 
 #include <opencv2/opencv.hpp>
 
+#include "apex/lidar.hpp"
 #include "apex/mdp.hpp"
 #include "apex/optim.hpp"
 #include "apex/vision.hpp"
@@ -45,6 +47,11 @@ double ms_since(Clock::time_point t) {
 }
 float clampf(float v, float lo, float hi) { return std::max(lo, std::min(hi, v)); }
 
+constexpr float kWheelbase = 2.995f;         // BMW X5 [m]
+constexpr float kCorridorHalfWidth = 1.35f;  // half car width + margin [m]
+constexpr float kLatAccelMax = 2.0f;         // comfortable lateral accel [m/s^2]
+constexpr float kLidarAheadOfCamera = 2.38f; // SICK x 4.10 m - camera x 1.72 m
+
 } // namespace
 
 int main(int argc, char **argv) {
@@ -53,7 +60,11 @@ int main(int argc, char **argv) {
   long max_frames = -1;
   string video_path = "..\\Train_set\\dataset_video175.mp4";
   bool explicit_video = false;
-  string record_path, snap_path;
+  string record_path, snap_path, log_path, jpg_dir;
+  int ui_every = 1;
+  string scan_dump_dir;
+  double last_dump = -10.0;
+  float cruise_arg = -1.0f;
   long snap_frame = -1;
 
   for (int i = 1; i < argc; ++i) {
@@ -64,8 +75,18 @@ int main(int argc, char **argv) {
       headless = true;
     else if (a == "--frames" && i + 1 < argc)
       max_frames = std::atol(argv[++i]);
+    else if (a == "--record-jpg" && i + 1 < argc)
+      jpg_dir = argv[++i];
     else if (a == "--record" && i + 1 < argc)
       record_path = argv[++i];
+    else if (a == "--dump-scans" && i + 1 < argc)
+      scan_dump_dir = argv[++i];
+    else if (a == "--cruise" && i + 1 < argc)
+      cruise_arg = static_cast<float>(std::atof(argv[++i]));
+    else if (a == "--log" && i + 1 < argc)
+      log_path = argv[++i];
+    else if (a == "--ui-every" && i + 1 < argc)
+      ui_every = std::max(1, std::atoi(argv[++i]));
     else if (a == "--snap" && i + 2 < argc) {
       snap_frame = std::atol(argv[++i]);
       snap_path = argv[++i];
@@ -94,9 +115,10 @@ int main(int argc, char **argv) {
 #endif
 
   VideoCapture cap;
+  apex::CameraModel cam_model;
   double frame_dt = 1.0 / 25.0;
 #ifdef USE_WEBOTS
-  WbDeviceTag wb_cam = 0, wb_lidar = 0;
+  WbDeviceTag wb_cam = 0, wb_lidar = 0, wb_gps = 0;
   int wb_cam_w = 0, wb_cam_h = 0;
 #endif
 
@@ -125,15 +147,24 @@ int main(int argc, char **argv) {
         wb_cam = tag;
       if (!wb_lidar && wb_device_get_node_type(tag) == WB_NODE_LIDAR)
         wb_lidar = tag;
+      if (!wb_gps && wb_device_get_node_type(tag) == WB_NODE_GPS)
+        wb_gps = tag;
     }
     if (wb_cam) {
       wb_camera_enable(wb_cam, basic_step);
       wb_cam_w = wb_camera_get_width(wb_cam);
       wb_cam_h = wb_camera_get_height(wb_cam);
-      cout << "[APEX] Camera " << wb_cam_w << "x" << wb_cam_h << endl;
+      // BMW X5 roof slot: camera 1.80 m above the road, 1.72 m ahead of the
+      // rear axle (from BmwX5.proto: slot z 1.45 + body 0.40 - mount 0.05)
+      cam_model = apex::CameraModel::from_webots(
+          wb_cam_w, wb_cam_h, static_cast<float>(wb_camera_get_fov(wb_cam)), 1.80f, 1.72f);
+      cout << "[APEX] Camera " << wb_cam_w << "x" << wb_cam_h << ", f = " << cam_model.f
+           << " px" << endl;
     } else {
       cerr << "[APEX] WARNING: no camera found - lane keeping disabled" << endl;
     }
+    if (wb_gps)
+      wb_gps_enable(wb_gps, basic_step);
     if (wb_lidar)
       wb_lidar_enable(wb_lidar, basic_step);
     else
@@ -164,10 +195,12 @@ int main(int argc, char **argv) {
   }
 
   // ---------------------------------------------------------------- engine state
-  const float v_cruise_kmh = use_webots ? 32.0f : 65.0f;
+  const float v_cruise_kmh =
+      cruise_arg > 0.0f ? cruise_arg : (use_webots ? 32.0f : 65.0f);
   apex::DrivingMDP mdp; // value iteration + stationary distribution at start-up
   apex::SpeedPlannerADMM planner;
   apex::LaneTracker lane_tracker;
+  lane_tracker.cam = cam_model;
   dash::Dashboard dashboard;
 
   const int SVD_M = 10, SVD_W = 64, SVD_H = 64, SVD_N = SVD_W * SVD_H;
@@ -181,8 +214,11 @@ int main(int argc, char **argv) {
   int svd_idx = 0;
 
   float speed_mps = use_webots ? 0.0f : v_cruise_kmh / 3.6f;
-  float accel = 0.0f, steer_cmd = 0.0f;
-  float gap_f = 100.0f, closing_f = 0.0f, prev_gap = -1.0f;
+  float accel = 0.0f, steer_cmd = 0.0f, plan_a_prev = 0.0f;
+  int speed_bin_prev = apex::V_SLOW, dist_bin_prev = apex::D_CLEAR;
+  float gap_f = 100.0f, closing_f = 0.0f;
+  int lidar_rejected = 0;
+  apex::LeadKalman lead_kf;
   long frame_count = 0;
   double sim_time = 0.0, fps_ema = 0.0;
   apex::SpeedPlannerADMM::Result plan;
@@ -198,11 +234,20 @@ int main(int argc, char **argv) {
   VideoWriter recorder;
   if (!record_path.empty()) {
     recorder.open(record_path, VideoWriter::fourcc('M', 'J', 'P', 'G'),
-                  1.0 / frame_dt, Size(dash::Dashboard::W, dash::Dashboard::H));
+                  1.0 / (frame_dt * ui_every),
+                  Size(dash::Dashboard::W, dash::Dashboard::H));
     if (!recorder.isOpened())
       cerr << "[APEX] WARNING: cannot record to " << record_path << endl;
   }
-  const bool draw = !headless || recorder.isOpened() || snap_frame > 0;
+  // JPEG sequence survives the controller being killed when Webots quits
+  // (an AVI would be left without its index)
+  const bool draw = !headless || recorder.isOpened() || snap_frame > 0 || !jpg_dir.empty();
+  long jpg_count = 0;
+  FILE *log = log_path.empty() ? nullptr : fopen(log_path.c_str(), "w");
+  if (log)
+    fprintf(log, "t,x,y,speed_kmh,cmd_kmh,accel,steer,raw_steer,lane_err,lane_ok,"
+                 "has_lead,gap,closing,dist_bin,action,admm_iters,admm_conv,"
+                 "active_gap,brake,math_ms\n");
   double sum_draw_ms = 0.0;
   double sum_math_ms = 0.0, max_math_ms = 0.0;
 
@@ -249,46 +294,77 @@ int main(int argc, char **argv) {
     resize(frame, cam_view, Size(CAM_W, CAM_H));
     timings.push_back({"frame resize", ms_since(t)});
 
-    // ------------------------------------------------- lateral: lane + steering
-    float fence_nudge = 0.0f;
-    if (use_webots) {
-      t = Clock::now();
-      lane = lane_tracker.process(cam_view.data, CAM_W, CAM_H,
-                                  static_cast<float>(frame_dt));
-      timings.push_back({"lane WLS+Gauss", ms_since(t)});
-    }
-
     // --------------------------------------------- longitudinal: obstacle range
+    float fence_nudge = 0.0f;
     bool has_lead = false;
     float gap_meas = 100.0f;
     float motion[3] = {0, 0, 0};
     if (use_webots && lidar && lidar_n > 0) {
       t = Clock::now();
-      const int fs = (lidar_n * 46) / 100, fe = (lidar_n * 54) / 100;
-      float min_front = 100.0f, min_left = 100.0f, min_right = 100.0f;
-      for (int i = 0; i < lidar_n; ++i) {
-        float r = lidar[i];
-        if (!std::isfinite(r) || r <= 0.4f)
-          r = 80.0f;
-        if (i >= fs && i <= fe)
-          min_front = std::min(min_front, r);
-        else if (i >= (lidar_n * 30) / 100 && i < fs)
-          min_left = std::min(min_left, r);
-        else if (i > fe && i <= (lidar_n * 70) / 100)
-          min_right = std::min(min_right, r);
+      // corridor + scan clustering + ground-strike/wall rejection (apex/lidar.hpp)
+      apex::Corridor cor;
+      cor.kappa = std::tan(steer_cmd) / kWheelbase;
+      cor.cam_offset = kLidarAheadOfCamera;
+      if (lane.valid && lane.fit.ok && lane.fit.used >= 10) { // previous frame's fit
+        cor.use_lane = true;
+        for (int k = 0; k < 3; ++k)
+          cor.c[k] = lane.fit.c[k];
+        cor.scale = apex::kFitScale;
+        cor.lane_max_x = lane.fit_x_max;
+      }
+      const apex::ScanObstacle ob =
+          apex::find_corridor_obstacle(lidar, lidar_n, lidar_fov, cor, kCorridorHalfWidth);
+      lidar_rejected = ob.rejected_long;
+      // debug: raw scan whenever something is reported closer than 4 m
+      if (!scan_dump_dir.empty() && ob.found && ob.x < 4.0f && sim_time - last_dump > 1.0) {
+        last_dump = sim_time;
+        char name[96];
+        std::snprintf(name, sizeof(name), "/scan_%07.2f.csv", sim_time);
+        if (FILE *fs_ = fopen((scan_dump_dir + name).c_str(), "w")) {
+          fprintf(fs_, "# ob_x %.3f ob_y %.3f len %.3f steer %.4f lane_ok %d\n", ob.x, ob.y,
+                  ob.length, steer_cmd, cor.use_lane ? 1 : 0);
+          for (int i = 0; i < lidar_n; ++i)
+            fprintf(fs_, "%d,%.4f\n", i, lidar[i]);
+          fclose(fs_);
+        }
+      }
+      if (ob.found) {
+        has_lead = true;
+        gap_meas = ob.x;
       }
       // kerb / fence keep-out: gentle nudge away from a close side obstacle
+      const int fs = (lidar_n * 46) / 100, fe = (lidar_n * 54) / 100;
+      float min_left = 100.0f, min_right = 100.0f;
+      for (int i = (lidar_n * 30) / 100; i <= (lidar_n * 70) / 100; ++i) {
+        const float r = lidar[i];
+        if (!std::isfinite(r) || r <= 0.4f)
+          continue;
+        if (i < fs)
+          min_left = std::min(min_left, r);
+        else if (i > fe)
+          min_right = std::min(min_right, r);
+      }
       if (min_right < 2.4f)
         fence_nudge -= (2.4f - min_right) * 0.09f;
       if (min_left < 2.2f)
         fence_nudge += (2.2f - min_left) * 0.09f;
       fence_nudge = clampf(fence_nudge, -0.15f, 0.15f);
-      if (min_front < 45.0f) {
-        has_lead = true;
-        gap_meas = min_front;
-      }
-      timings.push_back({"lidar scan", ms_since(t)});
-    } else if (!use_webots) {
+      timings.push_back({"lidar cluster", ms_since(t)});
+    }
+
+    // ------------------------------------------------- lateral: lane + steering
+    if (use_webots) {
+      t = Clock::now();
+      // occlusion masking: paint beyond the car ahead is hidden by it, and its
+      // lights / plate must not be read as lane markings
+      lane_tracker.max_range =
+          has_lead ? clampf(gap_meas + kLidarAheadOfCamera - 1.5f, 8.0f, 40.0f) : 40.0f;
+      lane = lane_tracker.process(cam_view.data, CAM_W, CAM_H,
+                                  static_cast<float>(frame_dt), speed_mps);
+      timings.push_back({"IPM lane WLS", ms_since(t)});
+    }
+
+    if (!use_webots) {
       // PDE smoothing -> 64x64 -> rank-1 SVD background -> foreground energy
       t = Clock::now();
       apex::rgb_to_gray_fixed_point(cam_view.data, gray.data, CAM_W, CAM_H, 3);
@@ -336,48 +412,59 @@ int main(int argc, char **argv) {
       timings.push_back({"SVD background", ms_since(t)});
     }
 
-    // smooth the range signal and estimate the closing speed d(gap)/dt
+    // 2-state Kalman filter on [gap, gap rate] (apex/lidar.hpp)
+    lead_kf.step(static_cast<float>(frame_dt), has_lead, gap_meas);
+    has_lead = lead_kf.active;
     if (has_lead) {
-      gap_f = (prev_gap < 0.0f) ? gap_meas : 0.6f * gap_f + 0.4f * gap_meas;
-      if (prev_gap >= 0.0f)
-        closing_f = 0.85f * closing_f +
-                    0.15f * static_cast<float>((prev_gap - gap_f) / frame_dt);
-      prev_gap = gap_f;
+      gap_f = std::max(0.0f, lead_kf.gap);
+      closing_f = lead_kf.closing_speed();
     } else {
       gap_f = 100.0f;
       closing_f = 0.0f;
-      prev_gap = -1.0f;
     }
 
     // ----------------------------------------- final steering (rate limited)
     float steer_target = use_webots ? lane.steering_rad + fence_nudge : 0.0f;
-    steer_target = clampf(steer_target, -0.38f, 0.38f);
+    steer_target = clampf(steer_target, -lane_tracker.max_steer, lane_tracker.max_steer);
     const float max_step = lane_tracker.max_steer_rate * static_cast<float>(frame_dt);
     steer_cmd += clampf(steer_target - steer_cmd, -max_step, max_step);
 
     // ----------------------------------------------------- MDP decision
     t = Clock::now();
-    const float turn = std::fabs(steer_cmd);
+    // curve speed limit from lateral acceleration: v^2 |kappa| <= a_lat_max
+    const float kappa_abs = std::max(std::fabs(lane.curvature),
+                                     std::fabs(std::tan(steer_cmd)) / kWheelbase);
     const float limit_kmh =
-        use_webots ? std::max(21.0f, v_cruise_kmh - turn * 32.0f) : v_cruise_kmh;
-    const int dist_bin = has_lead ? apex::DrivingMDP::distance_bin(gap_f, closing_f)
-                                  : static_cast<int>(apex::D_CLEAR);
-    const int speed_bin = apex::DrivingMDP::speed_bin(speed_mps * 3.6f, v_cruise_kmh);
+        use_webots ? std::max(15.0f, std::min(v_cruise_kmh,
+                                              3.6f * std::sqrt(kLatAccelMax / std::max(kappa_abs, 1e-4f))))
+                   : v_cruise_kmh;
+    dist_bin_prev = has_lead ? apex::DrivingMDP::distance_bin(gap_f, closing_f, dist_bin_prev)
+                             : static_cast<int>(apex::D_CLEAR);
+    const int dist_bin = dist_bin_prev;
+    const float v_lead_est = has_lead ? std::max(0.0f, speed_mps - closing_f) : speed_mps;
+    speed_bin_prev = apex::DrivingMDP::speed_bin(speed_mps * 3.6f, v_cruise_kmh, speed_bin_prev);
+    const int speed_bin = speed_bin_prev;
     const int action = mdp.policy[apex::DrivingMDP::idx(dist_bin, speed_bin)];
     const float v_lim = limit_kmh / 3.6f;
     float v_ref = v_lim;
-    if (action == apex::MAINTAIN)
-      v_ref = std::min(std::max(speed_mps, 0.3f * v_lim), v_lim);
+    if (action == apex::MAINTAIN)  // FAST bin = "at cruise": hold the cruise target
+      v_ref = (speed_bin == apex::V_FAST) ? v_lim
+                                          : std::min(std::max(speed_mps, 0.3f * v_lim), v_lim);
     else if (action == apex::BRAKE)
-      v_ref = (dist_bin == apex::D_CLOSE) ? 0.0f
-                                          : std::max(0.0f, std::min(speed_mps, v_lim) - 2.5f);
+      // brake TOWARD the obstacle's speed (car-following), not to zero, unless
+      // it is (nearly) stationary; the ADMM gap constraint guarantees safety
+      v_ref = (dist_bin == apex::D_CLOSE)
+                  ? (v_lead_est < 1.0f ? 0.0f : 0.8f * v_lead_est)
+                  : std::max(0.0f, std::min({speed_mps - 1.5f, v_lead_est, v_lim}));
     timings.push_back({"MDP policy", ms_since(t)});
 
     // ------------------------------------------------- ADMM speed plan
     t = Clock::now();
     apex::SpeedPlannerADMM::Problem pb;
     pb.v0 = speed_mps;
-    pb.a0 = clampf(accel, -6.0f, 3.0f);
+    // seed jerk continuity with the previous PLAN's acceleration (receding
+    // horizon); the differentiated speed sensor is too noisy and feeds back
+    pb.a0 = use_webots ? plan_a_prev : clampf(accel, -6.0f, 3.0f);
     pb.v_ref = v_ref;
     pb.v_max = v_lim;
     pb.has_lead = has_lead;
@@ -390,7 +477,9 @@ int main(int argc, char **argv) {
     // receding horizon: apply the start of the plan, re-plan next frame
     const float plan_dt = planner.params().dt;
     const float a_cmd = plan.a[0];
-    const float v_cmd = std::max(0.0f, plan.v[std::min(2, plan.n - 1)]);
+    plan_a_prev = plan.a[0];
+    const float v_cmd =
+        clampf(plan.v[std::min(2, plan.n - 1)], 0.0f, v_lim);
     float brake = 0.0f;
     if (a_cmd < -1.0f)
       brake = clampf((-a_cmd - 1.0f) / 5.0f, 0.0f, 1.0f);
@@ -416,7 +505,27 @@ int main(int argc, char **argv) {
     max_math_ms = std::max(max_math_ms, math_ms);
 
     // ------------------------------------------------- dashboard
-    if (draw) {
+    if (log) {
+      double gx = 0.0, gy = 0.0;
+#ifdef USE_WEBOTS
+      if (use_webots && wb_gps) {
+        const double *g = wb_gps_get_values(wb_gps);
+        if (g) {
+          gx = g[0];
+          gy = g[1];
+        }
+      }
+#endif
+      fprintf(log, "%.3f,%.3f,%.3f,%.2f,%.2f,%.3f,%.4f,%.4f,%.4f,%d,%d,%.2f,%.2f,"
+                   "%d,%d,%d,%d,%d,%.2f,%.3f\n",
+              sim_time, gx, gy, speed_mps * 3.6f, v_cmd * 3.6f, plan.a[0],
+              steer_cmd, use_webots ? lane.raw_steer : 0.0f,
+              use_webots ? lane.lateral_error : 0.0f, use_webots && lane.valid,
+              has_lead, gap_f, closing_f, dist_bin, action, plan.iterations,
+              plan.converged, plan.active_gap, brake, math_ms);
+    }
+
+    if (draw && (frame_count % ui_every == 0 || frame_count == snap_frame)) {
       const auto t_draw = Clock::now();
       dash::Data d;
       d.webots = use_webots;
@@ -425,6 +534,7 @@ int main(int argc, char **argv) {
       d.fps = fps_ema;
       d.camera = &cam_view;
       d.lane = use_webots ? &lane : nullptr;
+      d.cam = &lane_tracker.cam;
       d.steer = steer_cmd;
       d.raw_steer = use_webots ? lane.raw_steer + fence_nudge : 0.0f;
       d.speed_kmh = speed_mps * 3.6f;
@@ -452,6 +562,11 @@ int main(int argc, char **argv) {
       const Mat &ui = dashboard.render(d);
       if (recorder.isOpened())
         recorder.write(ui);
+      if (!jpg_dir.empty()) {
+        char name[64];
+        std::snprintf(name, sizeof(name), "/%06ld.jpg", jpg_count++);
+        imwrite(jpg_dir + name, ui, {IMWRITE_JPEG_QUALITY, 88});
+      }
       if (frame_count == snap_frame)
         imwrite(snap_path, ui);
       sum_draw_ms += ms_since(t_draw);
@@ -472,6 +587,8 @@ int main(int argc, char **argv) {
            "dashboard %.2f ms/frame, loop %.1f FPS\n",
            frame_count, sum_math_ms / frame_count, max_math_ms,
            sum_draw_ms / frame_count, fps_ema);
+  if (log)
+    fclose(log);
   if (use_webots) {
 #ifdef USE_WEBOTS
     wbu_driver_cleanup();

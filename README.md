@@ -58,6 +58,41 @@ Webots is found through `WEBOTS_HOME` or at `C:/Program Files/Webots`.
 | `apex_engine video.mp4 --snap 400 shot.png` | save one dashboard frame |
 | set as the car's controller in Webots | simulation (auto-detected) |
 
+## Webots simulation
+
+```bash
+powershell -ExecutionPolicy Bypass -File webots/run_demo.ps1 -Duration 185 -Run demo
+```
+
+The script generates the world, pre-fetches assets, runs Webots (fast mode, recording), analyses the
+logs, and composes `webots/output/<run>/<run>_final.mp4`: the Webots 3D chase view on the left and
+the live engine dashboard on the right. `-Watch` opens Webots in real time instead.
+
+| Piece | File |
+|---|---|
+| World, generated from Webots' `city.wbt` (reproducible) | `webots/tools/build_world.py` → `webots/worlds/apex_city.wbt` |
+| Scenarios and map dressing, placed on the driven lane path | `webots/tools/scenarios.py`, `scenario_plan.json`, `worlds/ref_path.csv` |
+| Ego controller (this engine, plus bundled DLLs) | `webots/controllers/apex_engine/` (CMake post-build deploy) |
+| Supervisor: movie, stop & go, moving actors, ground-truth log | `webots/controllers/scenario_supervisor/scenario_supervisor.c` |
+| Asset pre-fetch (works around Webots' download stall) | `webots/tools/prefetch_assets.py` |
+| Metrics and report figure | `webots/tools/analyze_run.py` |
+
+Scenarios along the ~760 m lap: a pedestrian on the zebra crossing, a stock oil barrel in the lane,
+parked cars in the outer lane (must be ignored), a slow lead car at 12 km/h, a cut-in from the outer
+lane, a stalled car, and a cone/barrel lane closure. Map dressing adds street lights, trees, bus stops,
+benches, bins and roadwork signs.
+
+### Simulation-side maths (added while bringing the car up in Webots)
+- **Inverse perspective mapping:** the pinhole model x = f·h/(v − c_y), y = −(u − c_x)·x/f
+  back-projects lane paint to metres on the road. The yellow line, lane divider and road edge are
+  then fused in **one** robust WLS fit with inverse-variance weights w ∝ 1/x².
+- **Pure pursuit:** curvature κ = 2y/D² to a speed-dependent look-ahead point, steering δ = atan(Lκ).
+  The curve speed limit comes from lateral acceleration, v ≤ √(a_lat/|κ|).
+- **Path-corridor obstacle test:** lidar returns are kept only inside the parabola y = −κx²/2 that
+  the car will sweep. A fixed cone sees guard-rails on every bend.
+- **Ground-strike rejection:** a pitching planar scanner cuts the road along a line *across* the
+  scan; obstacles are short segments, so returns wider than 7 m are rejected.
+
 ## Verified results
 
 `test_math` checks each solver against an independent reference or a theorem. All 30 checks pass:

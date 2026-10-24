@@ -156,6 +156,13 @@ struct DrivingMDP {
   }
 
   // Discretise continuous measurements into an MDP state.
+  // with hysteresis: leaving a nearer bin needs 2 m more gap than entering it
+  static int distance_bin(float gap_m, float closing_mps, int prev, float band = 2.0f) {
+    const int raw = distance_bin(gap_m, closing_mps);
+    if (raw < prev && distance_bin(gap_m - band, closing_mps) >= prev)
+      return prev;
+    return raw;
+  }
   static int distance_bin(float gap_m, float closing_mps) {
     const float ttc = closing_mps > 0.1f ? gap_m / closing_mps : 1e9f;
     if (gap_m < 8.0f || ttc < 2.0f)
@@ -165,6 +172,19 @@ struct DrivingMDP {
     if (gap_m < 35.0f)
       return D_FAR;
     return D_CLEAR;
+  }
+  // with hysteresis (+-band) so the state does not chatter on a boundary
+  static int speed_bin(float v, float v_cruise, int prev, float band = 0.04f) {
+    const float lo = 0.55f * v_cruise, hi = 0.85f * v_cruise, b = band * v_cruise;
+    if (prev == V_FAST && v > hi - b)
+      return V_FAST;
+    if (prev == V_SLOW && v < lo + b)
+      return V_SLOW;
+    if (v < lo)
+      return V_SLOW;
+    if (v > hi)
+      return V_FAST;
+    return V_CRUISE;
   }
   static int speed_bin(float v, float v_cruise) {
     if (v < 0.55f * v_cruise)

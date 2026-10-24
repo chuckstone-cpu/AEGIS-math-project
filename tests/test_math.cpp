@@ -15,6 +15,7 @@
 #include <random>
 #include <vector>
 
+#include "apex/lidar.hpp"
 #include "apex/mdp.hpp"
 #include "apex/optim.hpp"
 #include "apex/vision.hpp"
@@ -407,6 +408,78 @@ static void test_pde_svd() {
         std::fabs(cosang));
 }
 
+static void test_ipm() {
+  std::printf("\n[6] Inverse perspective mapping (pinhole camera)\n");
+  const CameraModel cam = CameraModel::from_webots(256, 128, 1.0f, 1.80f, 1.72f);
+  double worst = 0.0;
+  for (float X = 8.0f; X <= 40.0f; X += 4.0f)
+    for (float Y = -6.0f; Y <= 6.0f; Y += 1.5f) {
+      float u, v, X2, Y2;
+      cam.to_image(X, Y, 800, 600, u, v);
+      cam.to_ground(u, v, 800, 600, X2, Y2);
+      worst = std::max(worst, (double)std::hypot(X2 - X, Y2 - Y));
+    }
+  CHECK(worst < 1e-3, "ground -> pixel -> ground round trip error %.1e m", worst);
+  CHECK(std::fabs(cam.f - 128.0f / std::tan(0.5f)) < 1e-3f, "focal length f = (w/2)/tan(fov/2) = %.2f px",
+        cam.f);
+}
+
+static void test_lidar() {
+  std::printf("\n[7] Lidar corridor clustering + Kalman lead tracker\n");
+  const int n = 181;
+  const float fov = 3.14159265f;
+  std::vector<float> r(n, 80.0f);
+  // road-surface strike: a straight line across the scan at x = 9 m
+  for (int i = 0; i < n; ++i) {
+    const float a = 0.5f * fov - fov * i / (n - 1);
+    if (std::fabs(a) < 1.2f)
+      r[i] = 9.0f / std::cos(a);
+  }
+  Corridor straight;
+  ScanObstacle o = find_corridor_obstacle(r.data(), n, fov, straight, 1.35f);
+  CHECK(!o.found && o.rejected_long >= 1,
+        "long road-strike segment rejected (%d rejected, found=%d)", o.rejected_long, o.found);
+  // add a 1.8 m wide car at x = 6 m straight ahead (in front of the strike)
+  for (int i = 0; i < n; ++i) {
+    const float a = 0.5f * fov - fov * i / (n - 1);
+    const float y = 6.0f * std::tan(a);
+    if (std::fabs(y) < 0.9f)
+      r[i] = 6.0f / std::cos(a);
+  }
+  o = find_corridor_obstacle(r.data(), n, fov, straight, 1.35f);
+  CHECK(o.found && std::fabs(o.x - 6.0f) < 0.05f && o.length < 2.5f,
+        "car segment found at x = %.2f m, length %.2f m", o.x, o.length);
+
+  // Kalman: lead 20 m ahead closing at 3 m/s, noisy range (sigma 0.08 m)
+  LeadKalman kf;
+  std::mt19937 rng(5);
+  std::normal_distribution<float> N(0.0f, 0.08f);
+  float gap = 20.0f, err_fd = 0.0f, err_kf = 0.0f, prev = -1.0f;
+  int cnt = 0;
+  for (int k = 0; k < 250; ++k) {
+    gap -= 3.0f * 0.016f;
+    const float z = gap + N(rng);
+    kf.step(0.016f, true, z);
+    if (k > 100) {
+      const float fd = (prev - z) / 0.016f; // naive finite difference
+      err_fd += (fd - 3.0f) * (fd - 3.0f);
+      err_kf += (kf.closing_speed() - 3.0f) * (kf.closing_speed() - 3.0f);
+      ++cnt;
+    }
+    prev = z;
+  }
+  CHECK(std::fabs(kf.closing_speed() - 3.0f) < 0.3f,
+        "Kalman closing speed %.2f m/s (true 3.00), sigma %.2f", kf.closing_speed(),
+        std::sqrt(kf.P[1][1]));
+  // one-frame glitch at 0.5 m must not hijack a confirmed track
+  const float before = kf.gap;
+  kf.step(0.016f, true, 0.5f);
+  CHECK(std::fabs(kf.gap - before) < 0.2f && kf.active,
+        "one-frame 0.5 m glitch ignored (gap %.2f -> %.2f m)", before, kf.gap);
+  CHECK(err_kf < 0.05f * err_fd, "RMS error: Kalman %.2f m/s vs finite difference %.2f m/s",
+        std::sqrt(err_kf / cnt), std::sqrt(err_fd / cnt));
+}
+
 int main() {
   std::printf("APEX maths engine verification\n==============================");
   test_cg();
@@ -414,6 +487,8 @@ int main() {
   test_admm();
   test_mdp();
   test_pde_svd();
+  test_ipm();
+  test_lidar();
   std::printf("\n%s (%d failure%s)\n", failures ? "SOME TESTS FAILED" : "ALL TESTS PASSED",
               failures, failures == 1 ? "" : "s");
   return failures ? 1 : 0;

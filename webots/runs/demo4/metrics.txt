@@ -1,0 +1,10 @@
+sim time [s]                           217.808
+distance driven [m]                    813.226
+mean / max speed [km/h]                16.9 / 30.2
+steering total variation [rad/min]     3.388
+commanded jerk p99 [m/s^3]             25.000
+min lidar gap [m]                      0.000
+obstacles handled (stop & go)          3
+frames with lane fit                   92.1 %
+ADMM converged frames                  89.2 %
+maths time mean / max [ms]             0.50 / 4.15
